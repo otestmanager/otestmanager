@@ -1,0 +1,29 @@
+<?xml version='1.0' standalone='yes'?>
+<datas>
+	<data type="en">
+		<name>Riskanalysis</name>
+		<version>1</version>
+		<ishidden>false</ishidden>
+		<description>Riskanalysis Manager System.</description>
+		<url>http://www.sten.or.kr/otm</url>
+		<company>STA Consulting Inc.</company>
+		<iconcls>ico-riskanalysis</iconcls>
+		<subpage>true</subpage>
+		<categoryid>ID_RISK</categoryid>
+		<userform>true</userform>
+		<order>1</order>
+	</data>
+	<data type="ko">
+		<name>리스크분석</name>
+		<version>1</version>
+		<ishidden>false</ishidden>
+		<description>리스트분석 시스템.</description>
+		<url>http://www.sten.or.kr/otm</url>
+		<company>STA테스팅컨설팅</company>
+		<iconcls>ico-riskanalysis</iconcls>
+		<subpage>true</subpage>
+		<categoryid>ID_RISK</categoryid>
+		<userform>true</userform>
+		<order>1</order>
+	</data>
+</datas>

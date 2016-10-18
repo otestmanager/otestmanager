@@ -1,0 +1,44 @@
+<?xml version='1.0' standalone='yes'?>
+<datas>
+	<data type="en">
+		<name>Storage</name>
+		<version>1</version>
+		<ishidden>false</ishidden>
+		<description>File Manager System.</description>
+		<url>http://www.sten.or.kr/otm</url>
+		<company>STA Consulting Inc.</company>
+		<iconcls>ico-storage</iconcls>
+		<subpage>false</subpage>
+		<categoryid>ID_STORAGE</categoryid>
+		<userform>false</userform>
+		<order>5</order>
+	</data>
+	<data type="ko">
+		<name>파일 관리</name>
+		<version>1</version>
+		<ishidden>false</ishidden>
+		<description>파일 관리 시스템. 
+			파일을 등록하고 관리</description>
+		<url>http://www.sten.or.kr/otm</url>
+		<company>STA테스팅컨설팅</company>
+		<iconcls>ico-storage</iconcls>
+		<subpage>false</subpage>
+		<categoryid>ID_STORAGE</categoryid>
+		<userform>false</userform>
+		<order>5</order>
+	</data>
+	<data type="project-ko">
+		<name>파일 관리</name>
+		<version>1</version>
+		<ishidden>false</ishidden>
+		<description>파일 관리 시스템. 
+			파일을 등록하고 관리</description>
+		<url>http://www.sten.or.kr/otm</url>
+		<company>STA테스팅컨설팅</company>
+		<iconcls>ico-storage</iconcls>
+		<subpage>false</subpage>
+		<categoryid>ID_STORAGE</categoryid>
+		<userform>false</userform>
+		<order>5</order>
+	</data>
+</datas>

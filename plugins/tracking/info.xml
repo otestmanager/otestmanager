@@ -1,0 +1,44 @@
+<?xml version='1.0' standalone='yes'?>
+<datas>
+	<data type="en">
+		<name>TestCase Defect Tracking</name>
+		<version>1</version>
+		<ishidden>false</ishidden>
+		<description>TestCase Defect Tracking.</description>
+		<url>http://www.sten.or.kr/otm</url>
+		<company>STA Consulting Inc.</company>
+		<iconcls>ico-tracking</iconcls>
+		<subpage>false</subpage>
+		<categoryid>ID_TRACKING</categoryid>
+		<userform>false</userform>
+		<order>3</order>
+	</data>
+	<data type="ko">
+		<name>테스트케이스 결함 추적 관리</name>
+		<version>1</version>
+		<ishidden>false</ishidden>
+		<description>테스트케이스와 결함을 연결 또는 연결 해제할 수 있습니다.
+			연결된 정보로 서로간의 추적성을 제공합니다.</description>
+		<url>http://www.sten.or.kr/otm</url>
+		<company>STA테스팅컨설팅</company>
+		<iconcls>ico-tracking</iconcls>
+		<subpage>false</subpage>
+		<categoryid>ID_TRACKING</categoryid>
+		<userform>false</userform>
+		<order>3</order>
+	</data>
+	<data type="project-ko">
+		<name>테스트케이스 결함 추적 관리</name>
+		<version>1</version>
+		<ishidden>false</ishidden>
+		<description>테스트케이스와 결함을 연결 또는 연결 해제할 수 있습니다.
+			연결된 정보로 서로간의 추적성을 제공합니다.</description>
+		<url>http://www.sten.or.kr/otm</url>
+		<company>STA테스팅컨설팅</company>
+		<iconcls>ico-tracking</iconcls>
+		<subpage>false</subpage>
+		<categoryid>ID_TRACKING</categoryid>
+		<userform>false</userform>
+		<order>3</order>
+	</data>
+</datas>

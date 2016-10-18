@@ -1,0 +1,29 @@
+<?xml version='1.0' standalone='yes'?>
+<datas>
+	<data type="en">
+		<name>Requirement</name>
+		<version>1</version>
+		<ishidden>false</ishidden>
+		<description>Requirement Manager System.</description>
+		<url>http://www.sten.or.kr/otm</url>
+		<company>STA Consulting Inc.</company>
+		<iconcls>ico-requirement</iconcls>
+		<subpage>false</subpage>
+		<categoryid>ID_REQ</categoryid>
+		<userform>true</userform>
+		<order>1</order>
+	</data>
+	<data type="ko">
+		<name>요구사항</name>
+		<version>1</version>
+		<ishidden>false</ishidden>
+		<description>요구사항 관리 시스템. 요구사항을 등록하고 관리하며, 테스트케이스 와의 연결을 통하여 추적성을 제공합니다.</description>
+		<url>http://www.sten.or.kr/otm</url>
+		<company>STA테스팅컨설팅</company>
+		<iconcls>ico-requirement</iconcls>
+		<subpage>false</subpage>
+		<categoryid>ID_REQ</categoryid>
+		<userform>true</userform>
+		<order>1</order>
+	</data>
+</datas>

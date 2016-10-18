@@ -1,0 +1,295 @@
+<!--
+//a {
+//    color:#15428B;
+//}
+//a:link, a:visited {
+//    text-decoration: none;
+//}
+//a:hover {
+//    text-decoration: underline;
+//}
+-->
+#header {
+	display:table-cell;
+	vertical-align:middle;
+	background: #7F99BE url(../img/layout-browser-hd-bg.gif) repeat-x center;
+}
+#toolbar {
+	background:#7F7F7F;
+	color: #fff;
+}
+#header h1 {
+	font-size: 12px;
+	color: #fff;
+	font-weight: normal;
+}
+#footer {
+	display:table-cell;
+	vertical-align:middle;
+	text-align:center;
+	background: #aaaaaa;
+	#background: #7F99BE url(../img/layout-browser-hd-bg.gif) repeat-x center;
+}
+#footer h1 {
+	font-size: 12px;
+	color: #fff;
+	font-weight: normal;
+	#padding: 5px 10px;
+}
+
+.foo div a span
+{
+	color:#fff !important;
+}
+
+.cTextAlign{
+	text-align: right;
+	background: red;
+}
+
+.arrow_right{
+	background-image: url(./icon/arrow_right.gif) !important;
+	background-repeat: no-repeat;
+}
+
+
+.ico-project {
+	background-image: url(./icon/house.gif) !important; 
+	background-repeat: no-repeat;
+}
+
+.ico-defect {
+	background-image: url(./icon/bug.gif) !important; 
+	background-repeat: no-repeat;
+}
+
+.ico-testcase {
+	background-image: url(./icon/monitor.gif) !important; 
+	background-repeat: no-repeat;
+}
+
+.ico-backlog {
+	background-image: url(./icon/sum.gif) !important; 
+	background-repeat: no-repeat;
+}
+
+.ico-plan {
+	background-image: url(./icon/calendar.gif) !important; 
+	background-repeat: no-repeat;
+}
+
+.ico-report {
+	background-image: url(./icon/report.gif) !important; 
+	background-repeat: no-repeat;
+}
+
+.ico-setup {
+	background-image: url(./icon/cog.gif) !important; 
+	background-repeat: no-repeat;
+}
+
+.ico-group {
+	background-image: url(./icon/group.gif) !important; 
+	background-repeat: no-repeat;
+}
+
+.ico-code {
+	background-image: url(./icon/brick.gif) !important; 
+	background-repeat: no-repeat;
+}
+
+.ico-workflow {
+	background-image: url(./icon/arrow_rotate_clockwise.gif) !important; 
+	background-repeat: no-repeat;
+}
+
+.ico-userform {
+	background-image: url(./icon/pencil.gif) !important; 
+	background-repeat: no-repeat;
+}
+
+.ico-plugin {
+	background-image: url(./icon/plugin.gif) !important; 
+	background-repeat: no-repeat;
+}
+
+.ico-add {
+	background-image: url(./icon/icon_add.gif) !important; 
+	background-repeat: no-repeat;
+}
+.ico-column {
+	background-image: url(./icon/icon_column.gif) !important; 
+	background-repeat: no-repeat;
+}
+.ico-copy {
+	background-image: url(./icon/icon_copy.gif) !important; 
+	background-repeat: no-repeat;
+}
+.ico-remove {
+	background-image: url(./icon/icon_delete.gif) !important; 
+	background-repeat: no-repeat;
+}
+.ico-import {
+	background-image: url(./icon/icon_get.gif) !important; 
+	background-repeat: no-repeat;
+}
+.ico-man {
+	background-image: url(./icon/icon_man.gif) !important; 
+	background-repeat: no-repeat;
+}
+.ico-unman {
+	background-image: url(./icon/icon_unman.gif) !important; 
+	background-repeat: no-repeat;
+}
+.ico-update {
+	background-image: url(./icon/icon_modify.gif) !important; 
+	background-repeat: no-repeat;
+}
+.ico-reload {
+	background-image: url(./icon/icon_reload.gif) !important; 
+	background-repeat: no-repeat;
+}
+.ico-reset {
+	background-image: url(./icon/icon_reset.gif) !important; 
+	background-repeat: no-repeat;
+}
+.ico-save {
+	background-image: url(./icon/icon_save.gif) !important; 
+	background-repeat: no-repeat;
+}
+.ico-search {
+	background-image: url(./icon/icon_search.gif) !important; 
+	background-repeat: no-repeat;
+}
+.ico-export {
+	background-image: url(./icon/icon_send.gif) !important; 
+	background-repeat: no-repeat;
+}
+.ico-view {
+	background-image: url(./icon/icon_view.gif) !important; 
+	background-repeat: no-repeat;
+}
+
+.ico-up {
+	background-image: url(./icon/col-move-bottom.gif) !important; 
+	background-repeat: no-repeat;
+}
+.ico-down {
+	background-image: url(./icon/col-move-top.gif) !important; 
+	background-repeat: no-repeat;
+}
+.ico-up1 {
+	background-image: url(./icon/sort_asc.gif) !important; 
+	background-repeat: no-repeat;
+}
+.ico-down1 {
+	background-image: url(./icon/sort_desc.gif) !important; 
+	background-repeat: no-repeat;
+}
+.ico-cancel {
+	background-image: url(./icon/cancel.gif) !important; 
+	background-repeat: no-repeat;
+}
+.ico-tracking {
+	background-image: url(./icon/link.gif) !important; 
+	background-repeat: no-repeat;
+}
+.ico-link {
+	background-image: url(./icon/link.gif) !important; 
+	background-repeat: no-repeat;
+}
+.ico-unlink {
+	background-image: url(./icon/link_break.gif) !important; 
+	background-repeat: no-repeat;
+}
+.ico-notification {
+	background-image: url(./icon/email.gif) !important; 
+	background-repeat: no-repeat;
+}
+.ico-storage {
+	background-image: url(./icon/drive.gif) !important; 
+	background-repeat: no-repeat;
+}
+
+
+/* ProgressBar ui Option */
+.progress-smaill-size{
+	height: 20px;
+	text-align: "center";
+	font-size:8px;
+	font-weight: bolder;
+	line-height: 50px;
+	/*border-right-color: #FF3D0D;     
+border-top-color: #FF3D0D;     
+background-image: none;     
+background-color: #FF3D0D; */
+}
+
+.x-progress-red {
+  background-color: #f1f1f1;
+  border-width: 1px;
+  height: 20px;
+  border-color: #8e8e8e;
+}
+.x-progress-red .x-progress-bar-red {
+  background-image: none;
+  background-color: #FF0000;
+}
+.x-progress-red .x-progress-text {
+  color: white;
+  font-weight: bold;
+  font-size: 11px;
+  font-family: tahoma, arial, verdana, sans-serif;
+  text-align: center;
+  line-height: 18px;
+}
+.x-progress-red .x-progress-text-back {
+  color: #5d5d5d;
+  line-height: 18px;
+}
+
+.x-progress-blue {
+  background-color: #f1f1f1;
+  border-width: 1px;
+  height: 20px;
+  border-color: #8e8e8e;
+}
+.x-progress-blue .x-progress-bar-blue {
+  background-image: none;
+  background-color: #0000FF;
+}
+.x-progress-blue .x-progress-text {
+  color: white;
+  font-weight: bold;
+  font-size: 11px;
+  font-family: tahoma, arial, verdana, sans-serif;
+  text-align: center;
+  line-height: 18px;
+}
+.x-progress-blue .x-progress-text-back {
+  color: #5d5d5d;
+  line-height: 18px;
+}
+
+.x-progress-green {
+  background-color: #f1f1f1;
+  border-width: 1px;
+  height: 20px;
+  border-color: #8e8e8e;
+}
+.x-progress-green .x-progress-bar-green {
+  background-image: none;
+  background-color: #00b300;
+}
+.x-progress-green .x-progress-text {
+  color: white;
+  font-weight: bold;
+  font-size: 11px;
+  font-family: tahoma, arial, verdana, sans-serif;
+  text-align: center;
+  line-height: 18px;
+}
+.x-progress-green .x-progress-text-back {
+  color: #5d5d5d;
+  line-height: 18px;
+}

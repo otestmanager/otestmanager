@@ -1,0 +1,58 @@
+OTestManager 1.1.0
+Copyright (c) 2014-2015, STA Inc.
+All rights reserved.
+otm@sta.co.kr
+
+http://www.sten.or.kr/otm
+
+http://www.sten.or.kr
+
+http://sourceforge.net/projects/otestmanager
+
+
+
+Open Source License
+-----------------------------------------------------------------------------------------------
+This version of OTestManager is licensed under the terms of the Open Source LGPL 2.1 license.
+
+https://www.gnu.org/licenses/lgpl-2.1.html
+
+-----------------------------------------------------------------------------------------------
+
+
+
+Third Party Content
+------------------------------------------------------------------------------------------
+The following third party software is distributed with STA and is 
+provided under other licenses and/or has source available from other locations. 
+
+Component: Codeigniter
+License: MIT
+Location: http://www.codeigniter.com/userguide3/license.html
+
+Component: Ext JS
+License: GPL 3.0
+Location: http://www.sencha.com/license
+
+Component: o2system
+License: MIT
+Location: http://github.com/circlecreative/o2system/
+
+Component: OSS2015_Test Management Platform
+License: LGPL 2.1
+
+Component: PHPExcel
+License: LGPL 2.1
+Location: http://www.codeplex.com/PHPExcel/
+
+
+
+Libraies
+------------------------------------------------------------------------------------------
+The following libraies is distributed with STA and is 
+provided under other licenses and/or has source available from other locations. 
+
+Component: XMLParser
+License: GNU General Public License
+Location: http://www.criticaldevelopment.net/xml/
+

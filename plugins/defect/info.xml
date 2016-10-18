@@ -1,0 +1,44 @@
+<?xml version='1.0' standalone='yes'?>
+<datas>
+	<data type="en">
+		<name>Defect</name>
+		<version>1</version>
+		<ishidden>false</ishidden>
+		<description>Defect Manager System.</description>
+		<url>http://www.sten.or.kr/otm</url>
+		<company>STA Consulting Inc.</company>
+		<iconcls>ico-defect</iconcls>
+		<subpage>false</subpage>
+		<categoryid>ID_DEFECT</categoryid>
+		<userform>true</userform>
+		<order>2</order>
+	</data>
+	<data type="ko">
+		<name>결함</name>
+		<version>1</version>
+		<ishidden>false</ishidden>
+		<description>결함 관리 시스템. 
+			결함을 등록하고 관리하며, 테스트케이스 실행 결과와의 연결을 통하여 추적성을 제공합니다.</description>
+		<url>http://www.sten.or.kr/otm</url>
+		<company>STA테스팅컨설팅</company>
+		<iconcls>ico-defect</iconcls>
+		<subpage>false</subpage>
+		<categoryid>ID_DEFECT</categoryid>
+		<userform>true</userform>
+		<order>2</order>
+	</data>
+	<data type="project-ko">
+		<name>일감</name>
+		<version>1</version>
+		<ishidden>false</ishidden>
+		<description>결함 관리 시스템. 
+			결함을 등록하고 관리하며, 테스트케이스 실행 결과와의 연결을 통하여 추적성을 제공합니다.</description>
+		<url>http://www.sten.or.kr/otm</url>
+		<company>STA테스팅컨설팅</company>
+		<iconcls>ico-defect</iconcls>
+		<subpage>false</subpage>
+		<categoryid>ID_DEFECT</categoryid>
+		<userform>true</userform>
+		<order>2</order>
+	</data>
+</datas>

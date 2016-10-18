@@ -1,0 +1,46 @@
+<?xml version='1.0' standalone='yes'?>
+<datas>
+	<data type="en">
+		<name>TestCase</name>
+		<version>2</version>
+		<ishidden>false</ishidden>
+		<description>TestCase Manager System.</description>
+		<url>http://www.sten.or.kr/otm</url>
+		<company>STA Consulting Inc.</company>
+		<iconcls>ico-testcase</iconcls>
+		<subpage>true</subpage>
+		<categoryid>ID_TC</categoryid>
+		<userform>true</userform>
+		<order>1</order>
+	</data>
+	<data type="ko">
+		<name>테스트케이스</name>
+		<version>2</version>
+		<ishidden>false</ishidden>
+		<description>테스트케이스 관리 시스템. 
+			테스트케이스을 등록하고 관리하며, 테스트케이스 실행을 하고 결함을 바로 등록할 수 있습니다.
+			실행 후 등록 된 결함은 실행 결과와 연결되어 추적성을 제공합니다.</description>
+		<url>http://www.sten.or.kr/otm</url>
+		<company>STA테스팅컨설팅</company>
+		<iconcls>ico-testcase</iconcls>
+		<subpage>true</subpage>
+		<categoryid>ID_TC</categoryid>
+		<userform>true</userform>
+		<order>1</order>
+	</data>
+	<data type="project-ko">
+		<name>테스트케이스</name>
+		<version>2</version>
+		<ishidden>true</ishidden>
+		<description>테스트케이스 관리 시스템. 
+			테스트케이스을 등록하고 관리하며, 테스트케이스 실행을 하고 결함을 바로 등록할 수 있습니다.
+			실행 후 등록 된 결함은 실행 결과와 연결되어 추적성을 제공합니다.</description>
+		<url>http://www.sten.or.kr/otm</url>
+		<company>STA테스팅컨설팅</company>
+		<iconcls>ico-testcase</iconcls>
+		<subpage>true</subpage>
+		<categoryid>ID_TC</categoryid>
+		<userform>true</userform>
+		<order>1</order>
+	</data>
+</datas>

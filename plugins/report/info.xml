@@ -1,0 +1,41 @@
+<?xml version='1.0' standalone='yes'?>
+<datas>
+	<data type="en">
+		<name>Report</name>
+		<version>1</version>
+		<description>Report System.</description>
+		<url>http://www.sten.or.kr/otm</url>
+		<company>STA Consulting Inc.</company>
+		<iconcls>ico-report</iconcls>
+		<subpage>false</subpage>
+		<categoryid>ID_REPORT</categoryid>
+		<userform>false</userform>
+		<order>4</order>
+	</data>
+	<data type="ko">
+		<name>리포트</name>
+		<version>1</version>
+		<description>결함과 테스트케이스와 관련된 리포트 데이터를 실시간으로 확인할 수 있습니다.
+			제공되는 데이터를 활용하여 보고서에 사용할 수 있습니다.</description>
+		<url>http://www.sten.or.kr/otm</url>
+		<company>STA테스팅컨설팅</company>
+		<iconcls>ico-report</iconcls>
+		<subpage>false</subpage>
+		<categoryid>ID_REPORT</categoryid>
+		<userform>false</userform>
+		<order>4</order>
+	</data>
+	<data type="project-ko">
+		<name>리포트</name>
+		<version>1</version>
+		<description>결함과 테스트케이스와 관련된 리포트 데이터를 실시간으로 확인할 수 있습니다.
+			제공되는 데이터를 활용하여 보고서에 사용할 수 있습니다.</description>
+		<url>http://www.sten.or.kr/otm</url>
+		<company>STA테스팅컨설팅</company>
+		<iconcls>ico-report</iconcls>
+		<subpage>false</subpage>
+		<categoryid>ID_REPORT</categoryid>
+		<userform>false</userform>
+		<order>4</order>
+	</data>
+</datas>

@@ -1,0 +1,18 @@
+php_flag session.auto_start ON
+
+<IfModule mod_rewrite.c>
+RewriteEngine On 
+
+RewriteCond %{REQUEST_FILENAME}       !-f
+RewriteCond %{REQUEST_FILENAME}       !-d
+RewriteCond %{REQUEST_URI} !^/captcha/(.*)$
+RewriteCond %{REQUEST_URI} !^/images/(.*)$
+RewriteCond %{REQUEST_URI} !^/include/(.*)$
+RewriteCond %{REQUEST_URI} !^/data/(.*)$
+RewriteCond %{REQUEST_URI} !^/layouts/(.*)$
+RewriteCond %{REQUEST_URI} !^/views/(.*)$
+RewriteCond %{REQUEST_URI} !^/plugins/(.*)$
+RewriteCond %{REQUEST_URI} !^/themes/(.*)$
+
+RewriteRule ^(.*)$ /index.php/$1 [L] 
+</IfModule>
