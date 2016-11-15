@@ -467,7 +467,7 @@ class Migration_otm extends CI_Migration {
 	function insert_default_data()
 	{
 		$writer = 'admin@sta.co.kr';
-		$regdate = $date=date('Y-m-d H:i:s');
+		$regdate = date('Y-m-d H:i:s');
 
 		$this->insert_member();
 
@@ -745,7 +745,7 @@ class Migration_otm extends CI_Migration {
 	function insert_member()
 	{
 		$writer = 'admin@sta.co.kr';
-		$regdate = $date=date('Y-m-d H:i:s');
+		$regdate = date('Y-m-d H:i:s');
 		$default_password = 'otestmanager';
 
 		$str_sql = "insert into otm_member(mb_email,mb_name,mb_pw,mb_is_admin,mb_is_approved,writer,regdate) values('admin@sta.co.kr','관리자',password('{$default_password}'),'Y','Y','{$writer}','{$regdate}')";

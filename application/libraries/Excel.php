@@ -59,7 +59,7 @@ class Excel {
 				foreach ($row as $cell) {
 
 					if($file_col != '' && $file_col == $col){
-							$tmp_cell = '';
+							//$tmp_cell = '';
 
 							if(is_array($cell)){
 								foreach($cell as $file_cell){
@@ -73,7 +73,7 @@ class Excel {
 										continue;
 									}
 
-									$tmp_cell .= $file_cell->of_source;
+									//$tmp_cell .= $file_cell->of_source;
 									//Add Files
 
 									$objDrawing = new PHPExcel_Worksheet_Drawing();

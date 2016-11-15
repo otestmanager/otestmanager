@@ -65,8 +65,17 @@ class Report_m extends CI_Model {
 
 		$pr_seq = $data['project_seq'];
 		$tp_seq = $data['tp_seq'];
-		$start_date = date("Y-m-d",strtotime($data['start_date']));
-		$end_date = date("Y-m-d",strtotime($data['end_date']));
+		
+		$start_date = "";
+		$end_date = date("Y-m-d");
+		if($data['start_date']){
+			$start_date = date("Y-m-d",strtotime($data['start_date']));
+		}
+		if($data['end_date']){
+			$end_date = date("Y-m-d",strtotime($data['end_date']));
+		}
+		
+		
 
 		if($tp_seq > 0){
 			$plan_sql = "
@@ -105,7 +114,7 @@ class Report_m extends CI_Model {
 				group by a.otm_defect_df_seq
 			) as a
 		";
-
+		
 		$query = $this->db->query($str_sql);
 		foreach ($query->result() as $row)
 		{
@@ -678,12 +687,49 @@ class Report_m extends CI_Model {
 			) as b
 		";
 
+
+
+		
+		$tp_quy = "";
+		if($tp_seq > 0){
+			$tp_quy = " and otl.otm_testcase_plan_tp_seq='$tp_seq'";
+		}		
+		$str_sql = "
+			select count(*) as cnt,pco_seq,pco_name from
+			(
+				select
+					a.*
+				from
+				(
+					select
+						ot.tc_seq,opc.pco_name,otr.otm_testcase_link_tl_seq,pco_seq
+					from
+					otm_project_code as opc, otm_testcase_result as otr, otm_testcase_link as otl,otm_testcase as ot
+					where
+						opc.pco_seq=otr.otm_project_code_pco_seq and
+						opc.otm_project_pr_seq='$pr_seq' and
+						opc.pco_type='tc_result' and
+						otl.tl_seq=otr.otm_testcase_link_tl_seq and
+						ot.tc_seq = otl.otm_testcase_tc_seq and
+						ot.otm_project_pr_seq='$pr_seq'
+						$tp_quy
+					order by tc_seq asc,otr.regdate desc
+				) as a
+				group by a.tc_seq
+			)as a
+			group by a.pco_seq
+		";
+		
+		$tmp_array = array();
+		
 		$query = $this->db->query($str_sql);
 		foreach ($query->result() as $row)
 		{
-			$arr[] = $row;
+			//$arr[] = $row;
+			$tmp_array[0]['tc_cnt'] += $row->cnt;
+			$tmp_array[0]["_".$row->pco_seq] = $row->cnt;
 		}
-		return $arr;
+		return $tmp_array;
 	}
 
 	function get_location($pid){
@@ -741,95 +787,7 @@ class Report_m extends CI_Model {
 				}
 
 			}
-		}
-		//return $subQuery;
-
-		/*$str_sql = "
-			select a.*,b.df_cnt,c.close_cnt from
-			(
-				select * from
-				(
-					select tc_seq,tc_subject,tc_inp_id,tc_inp_pid,tc_is_task,tc_out_id from otm_testcase where otm_project_pr_seq='$pr_seq'
-				) as a
-				left outer join
-				(
-					select a.*,b.pco_name as last_result,b.pco_seq,b.group_pco_seq from
-					(
-						select
-							otl.otm_testcase_tc_seq
-							,max(otr.otm_testcase_link_tl_seq) as tl_seq
-							$subQuery
-						from
-							otm_project_code as opc,otm_testcase_result as otr, otm_testcase_link otl
-						where
-							opc.otm_project_pr_seq='$pr_seq' and
-							opc.pco_type='tc_result' and
-							otl.tl_seq=otr.otm_testcase_link_tl_seq and
-							opc.pco_seq=otr.otm_project_code_pco_seq
-						group by otl.otm_testcase_tc_seq
-					) as a
-					left outer join
-					(
-						select
-							a.*,group_concat(pco_seq) as group_pco_seq
-						from
-						(
-							select
-								ot.tc_seq,opc.pco_name,otr.otm_testcase_link_tl_seq,pco_seq
-							from
-							otm_project_code as opc, otm_testcase_result as otr, otm_testcase_link as otl,otm_testcase as ot
-							where
-								opc.pco_seq=otr.otm_project_code_pco_seq and
-								opc.otm_project_pr_seq='$pr_seq' and
-								opc.pco_type='tc_result' and
-								otl.tl_seq=otr.otm_testcase_link_tl_seq and
-								ot.tc_seq = otl.otm_testcase_tc_seq and
-								ot.otm_project_pr_seq='$pr_seq'
-							order by tc_seq asc,otr.regdate desc
-						) as a
-						group by a.tc_seq
-					) as b
-					on
-					a.otm_testcase_tc_seq = b.tc_seq
-				) as b
-				on
-				a.tc_seq=b.otm_testcase_tc_seq
-			) as a
-			left outer join
-			(
-				select
-					otl.otm_testcase_tc_seq,
-					count(*) as df_cnt
-				from
-					otm_defect as od, otm_testcase_result as otr, otm_testcase_link as otl
-				where
-					od.otm_project_pr_seq = '$pr_seq' and
-					od.df_seq = otr.otm_defect_df_seq and
-					otr.otm_testcase_link_tl_seq = otl.tl_seq
-				group by otl.otm_testcase_tc_seq
-			) as b
-			on
-			a.tc_seq=b.otm_testcase_tc_seq
-			left outer join
-			(
-				select
-					otl.otm_testcase_tc_seq as tc_seq,count(*) as close_cnt
-				from
-					otm_defect as od, otm_project_code as opc, otm_defect_assign oda,otm_testcase_result otr,otm_testcase_link otl
-				where
-					od.otm_project_pr_seq='$pr_seq' and
-					opc.otm_project_pr_seq='$pr_seq' and
-					opc.pco_type='status' and
-					opc.pco_is_required='Y' and
-					oda.dc_current_status_co_seq=opc.pco_seq and
-					od.df_seq = oda.otm_defect_df_seq and
-					od.df_seq = otr.otm_defect_df_seq and
-					otr.otm_testcase_link_tl_seq=otl.tl_seq
-				group by otl.otm_testcase_tc_seq
-			) as c
-			on
-			a.tc_seq=c.tc_seq
-		";*/
+		}		
 
 		$str_sql = "
 			select a.*,b.df_cnt,c.close_cnt from
@@ -917,6 +875,8 @@ class Report_m extends CI_Model {
 			on
 			a.tc_seq=c.tc_seq
 		";
+
+		//return $str_sql;
 
 
 		$query = $this->db->query($str_sql);
@@ -1061,7 +1021,7 @@ class Report_m extends CI_Model {
 	function get_defect_data($data)
 	{
 		$pr_seq = $data['pr_seq'];
-		$tp_seq = $data['tp_seq'];
+		//$tp_seq = $data['tp_seq'];
 
 		$start = $data['start'];
 		$limit = $data['limit'];
@@ -1186,7 +1146,7 @@ class Report_m extends CI_Model {
 		if(sizeof($plan_tc_result_columns)>0){
 			for($i=0;$i<sizeof($plan_tc_result_columns);$i++){
 				$plan_info = $plan_tc_result_columns[$i];
-				$plan_seq = $plan_info['plan_seq'];
+				//$plan_seq = $plan_info['plan_seq'];
 
 				for($j=0;$j<sizeof($plan_info['subColumn']);$j++){
 					$pco_seq = $plan_info['subColumn'][$j]['dataIndex'];
@@ -1392,7 +1352,7 @@ class Report_m extends CI_Model {
 			on
 			a.tc_seq=c.tc_seq
 		";
-
+		
 		$query = $this->db->query($str_sql);
 
 		foreach ($query->result() as $row)
@@ -1531,7 +1491,7 @@ class Report_m extends CI_Model {
 
 		$str_sql_cnt = "select count(*) as cnt from ($str_sql) as a";
 		$query = $this->db->query($str_sql_cnt);
-		$cnt_result = $query->result();
+		//$cnt_result = $query->result();
 
 		$query = $this->db->query($str_sql);
 
@@ -1696,7 +1656,7 @@ class Report_m extends CI_Model {
 	}
 
 	function get_plan_tc_result_grid_excel($data){
-		$return_array = array();
+		//$return_array = array();
 
 		$plan_tc_result_columns	= $this->get_plan_tc_result_columns($data);
 		$plan_tc_result_data	= $this->get_plan_tc_result_data($data,$plan_tc_result_columns);
@@ -2065,6 +2025,642 @@ class Report_m extends CI_Model {
 		}else{
 			return "{success:true,totalCount: ".$cnt_result[0]->cnt.", data:".json_encode($arr)."}";
 		}
+	}
+
+	function code_list($data)
+	{
+		$temp_arr = array();
+
+		$this->db->where('otm_project_pr_seq', $data['pr_seq']);
+		$this->db->where('pco_type', $data['type']);
+		$this->db->order_by('ABS(pco_position), pco_seq asc');
+		$query = $this->db->get('otm_project_code');
+		foreach ($query->result() as $temp_row)
+		{
+			$temp_arr[] = $temp_row;
+		}
+		return $temp_arr;
+	}
+
+	function get_risk_defect_summary($data)
+	{
+		$pr_seq = $data['pr_seq'];
+		$tp_seq = $data['tp_seq'];
+
+		$riskarea = array();
+		$riskarea = $this->code_list(array('pr_seq'=>$pr_seq, 'type'=>'riskarea'));
+		for($i=0;$i<sizeof($riskarea);$i++){
+			$riskarea[$i]->total_cnt=0;
+			$riskarea[$i]->close_cnt=0;
+			$riskarea[$i]->open_cnt=0;
+		}		
+
+		$riskpoint = array();
+		$riskpoint_arr = $this->code_list(array('pr_seq'=>$pr_seq, 'type'=>'riskpoint'));
+		for($i=0; $i<count($riskpoint_arr); $i++){
+			$riskpoint[$riskpoint_arr[$i]->pco_seq] = $riskpoint_arr[$i]->pco_default_value;
+		}
+
+		$this->db->where('otm_project_pr_seq', $data['pr_seq']);
+		$this->db->order_by('rf_type desc, rf_ord asc');
+		$query = $this->db->get('otm_riskfactor');
+		$riskfactor = $query->result();
+
+		$riskitem_factor_vlaue = array();
+		$query = $this->db->get('otm_riskitem_factor_value');
+		foreach ($query->result() as $temp_row)
+		{
+			$riskitem_factor_vlaue[$temp_row->otm_riskitem_ri_seq][$temp_row->otm_riskfactor_rf_seq] = $temp_row;
+		}
+
+
+		$str_sql_cnt = "
+			select a.*,b.df_cnt,c.close_cnt from
+			(
+				select
+					a.*
+				from
+				(
+					select
+						ot.tc_seq,opc.pco_name,otr.otm_testcase_link_tl_seq,pco_seq,otl.tl_inp_pid
+					from
+					otm_project_code as opc, otm_testcase_result as otr, otm_testcase_link as otl,otm_testcase as ot
+					where
+						opc.pco_seq=otr.otm_project_code_pco_seq and
+						opc.otm_project_pr_seq='$pr_seq' and
+						opc.pco_type='tc_result' and
+						otl.tl_seq=otr.otm_testcase_link_tl_seq and
+						ot.tc_seq = otl.otm_testcase_tc_seq and
+						ot.otm_project_pr_seq='$pr_seq' and
+						otl.otm_testcase_plan_tp_seq='$tp_seq'
+					order by tc_seq asc,otr.regdate desc
+				) as a
+				group by a.tc_seq
+			)as a
+			left outer join
+			(
+				select
+					otl.otm_testcase_tc_seq,
+					count(*) as df_cnt
+				from
+					otm_defect as od, otm_testcase_result as otr, otm_testcase_link as otl
+				where
+					od.otm_project_pr_seq = '$pr_seq' and
+					od.df_seq = otr.otm_defect_df_seq and
+					otr.otm_testcase_link_tl_seq = otl.tl_seq and
+					otl.otm_testcase_plan_tp_seq='$tp_seq'
+				group by otl.otm_testcase_tc_seq
+			) as b
+			on
+			a.tc_seq=b.otm_testcase_tc_seq
+			left outer join
+			(
+				select
+					otl.otm_testcase_tc_seq as tc_seq,count(*) as close_cnt
+				from
+					otm_defect as od, otm_project_code as opc, otm_defect_assign oda,otm_testcase_result otr,otm_testcase_link otl
+				where
+					od.otm_project_pr_seq='$pr_seq' and
+					opc.otm_project_pr_seq='$pr_seq' and
+					opc.pco_type='status' and
+					opc.pco_is_required='Y' and
+					oda.dc_current_status_co_seq=opc.pco_seq and
+					od.df_seq = oda.otm_defect_df_seq and
+					od.df_seq = otr.otm_defect_df_seq and
+					otr.otm_testcase_link_tl_seq=otl.tl_seq and
+					otl.otm_testcase_plan_tp_seq='$tp_seq'
+				group by otl.otm_testcase_tc_seq
+			) as c
+			on
+			a.tc_seq=c.tc_seq
+		";
+		$query = $this->db->query($str_sql_cnt);
+		$df_arr = array();
+		$i=0;
+		foreach ($query->result() as $temp_row)
+		{
+			$total_cnt = ($temp_row->df_cnt)?$temp_row->df_cnt:0;
+			$close_cnt = ($temp_row->close_cnt)?$temp_row->close_cnt:0;
+			$open_cnt = $total_cnt-$close_cnt;
+
+			$df_arr[$i]['pid'] = $temp_row->tl_inp_pid;
+			$df_arr[$i]['total_cnt'] = $total_cnt;
+			$df_arr[$i]['close_cnt'] = $close_cnt;
+			$df_arr[$i]['open_cnt'] = $open_cnt;
+			$i++;
+			/*$df_arr[$temp_row->tl_inp_pid]['total_cnt'] = $total_cnt;
+			$df_arr[$temp_row->tl_inp_pid]['close_cnt'] = $close_cnt;
+			$df_arr[$temp_row->tl_inp_pid]['open_cnt'] = $open_cnt;*/
+		}
+		
+		
+		$return_arr = array();
+		$this->db->select('ri.ri_seq,ri.ri_subject,rtm.otm_testcase_tc_seq as tc_seq');//,otl.tl_inp_pid
+		$this->db->where('ri.otm_project_pr_seq', $data['pr_seq']);
+		
+		$this->db->join('otm_risk_tc_mapping as rtm','ri.ri_seq=rtm.otm_riskitem_ri_seq','left');
+		$this->db->join('otm_testcase_link otl','otl.otm_testcase_tc_seq=rtm.otm_testcase_tc_seq','left');
+		$this->db->where('otl.otm_testcase_plan_tp_seq', $tp_seq);
+
+		$query = $this->db->get('otm_riskitem as ri');
+
+		//return $this->db->last_query();
+		//exit;
+		foreach ($query->result() as $temp_row)
+		{		
+			$likelihood_point = 0;
+			$impat_point = 0;
+			$tc_inp_pid = "ts_".$temp_row->tc_seq;
+			
+			$temp_arr = array();
+
+			foreach ($riskfactor as $riskfactor_row)
+			{
+				if($riskitem_factor_vlaue[$temp_row->ri_seq]){
+					if($riskitem_factor_vlaue[$temp_row->ri_seq][$riskfactor_row->rf_seq]){						
+						if($riskitem_factor_vlaue[$temp_row->ri_seq][$riskfactor_row->rf_seq]->rifv_value > 0){
+
+							if($riskfactor_row->rf_type == 'likelihood'){
+								$likelihood_point += $riskpoint[$riskitem_factor_vlaue[$temp_row->ri_seq][$riskfactor_row->rf_seq]->rifv_value] * 1;
+							}else if($riskfactor_row->rf_type == 'impact'){
+								$impat_point += ($riskpoint[$riskitem_factor_vlaue[$temp_row->ri_seq][$riskfactor_row->rf_seq]->rifv_value]) * 1;
+							}
+						}
+					}
+				}
+			}
+			
+						
+			$temp_arr['final_point'] = $likelihood_point * $impat_point;
+			$temp_arr['riskarea'] = '';
+			$j = 0;
+			foreach ($riskarea as $riskarea_row)
+			{
+
+				$riskarea_row->name = $riskarea_row->pco_name;
+
+				if($temp_arr['riskarea'] == ''){
+					$check_point = $riskarea_row->pco_default_value * 1;
+
+					if($check_point <= $temp_arr['final_point']){
+						$temp_arr['riskarea'] = $riskarea_row->pco_name;						
+						$temp_arr[$riskarea_row->pco_seq] = 0;
+						
+						$tmp_total_cnt = 0;
+						$tmp_close_cnt = 0;
+						$tmp_open_cnt = 0;
+						for($i=0;$i<sizeof($df_arr);$i++){
+							if($tc_inp_pid == $df_arr[$i]['pid']){
+
+								//$tmp_total_cnt += $df_arr[$i]['total_cnt'];
+								//$tmp_close_cnt += $df_arr[$i]['close_cnt'];
+								//$tmp_open_cnt += $df_arr[$i]['open_cnt'];
+
+								//$riskarea[$j]->total_cnt += $df_arr[$i]['total_cnt'];
+								//$riskarea[$j]->close_cnt += $df_arr[$i]['close_cnt'];
+								//$riskarea[$j]->open_cnt += $df_arr[$i]['open_cnt'];
+
+								$riskarea_row->total_cnt += $df_arr[$i]['total_cnt'];
+								$riskarea_row->close_cnt += $df_arr[$i]['close_cnt'];
+								$riskarea_row->open_cnt += $df_arr[$i]['open_cnt'];
+							}
+						}
+						//$riskarea_row->total_cnt = $tmp_total_cnt;
+						//$riskarea_row->close_cnt = $tmp_close_cnt;
+						//$riskarea_row->open_cnt = $tmp_open_cnt;
+
+						//$riskarea_row->total_cnt = $riskarea[$j]->total_cnt;
+						//$riskarea_row->close_cnt = $riskarea[$j]->close_cnt;
+						//$riskarea_row->open_cnt = $riskarea[$j]->open_cnt;
+					}
+				}
+				$j++;
+			}
+		}
+		
+		return $riskarea;
+		//return $return_arr;
+
+		//return '{success:true,data:[{name:"STA1","open_cnt":"1","close_cnt":"2","total_cnt":"3"},{name:"STTA","open_cnt":"3","close_cnt":"4","total_cnt":"7"},{name:"ITA","open_cnt":"2","close_cnt":"2","total_cnt":"4"},{name:"FTA","open_cnt":"7","close_cnt":"6","total_cnt":"13"}]}';
+	}
+
+	function get_risk_defect_summary_excel($data)
+	{
+		$return_array_excel = array();
+		$data['return_type'] = "array";
+		$temp_array = $this->get_risk_defect_summary($data);
+		
+		for($i=0;$i<sizeof($temp_array);$i++){
+			$return_array_excel[$i]['riskarea'] = $temp_array[$i]->name;
+			$return_array_excel[$i]['total_defect'] = $temp_array[$i]->total_cnt;
+			$return_array_excel[$i]['open_defect'] = $temp_array[$i]->open_cnt;
+			$return_array_excel[$i]['close_defect'] = $temp_array[$i]->close_cnt;
+		}
+		return $return_array_excel;
+	}
+
+	function get_risk_tcresult_summary($data)
+	{
+		$pr_seq = $data['pr_seq'];
+		$tp_seq = $data['tp_seq'];
+
+		$riskarea = array();
+		$riskarea = $this->code_list(array('pr_seq'=>$pr_seq, 'type'=>'riskarea'));
+		for($i=0;$i<sizeof($riskarea);$i++){
+			$riskarea[$i]->total_cnt=0;
+			$riskarea[$i]->close_cnt=0;
+			$riskarea[$i]->open_cnt=0;
+		}		
+
+		$riskpoint = array();
+		$riskpoint_arr = $this->code_list(array('pr_seq'=>$pr_seq, 'type'=>'riskpoint'));
+		for($i=0; $i<count($riskpoint_arr); $i++){
+			$riskpoint[$riskpoint_arr[$i]->pco_seq] = $riskpoint_arr[$i]->pco_default_value;
+		}
+
+		$this->db->where('otm_project_pr_seq', $data['pr_seq']);
+		$this->db->order_by('rf_type desc, rf_ord asc');
+		$query = $this->db->get('otm_riskfactor');
+		$riskfactor = $query->result();
+
+		$riskitem_factor_vlaue = array();
+		$query = $this->db->get('otm_riskitem_factor_value');
+		foreach ($query->result() as $temp_row)
+		{
+			$riskitem_factor_vlaue[$temp_row->otm_riskitem_ri_seq][$temp_row->otm_riskfactor_rf_seq] = $temp_row;
+		}
+
+
+		$str_sql_cnt = "
+			select 
+				otl.otm_testcase_tc_seq as tc_seq,otl.tl_inp_pid,otm_project_code_pco_seq as pco_seq,count(*) as result_cnt
+			from
+				otm_testcase as ot,otm_testcase_link as otl, otm_testcase_result as otr
+			where
+				ot.otm_project_pr_seq='$pr_seq' and
+				ot.tc_seq = otl.otm_testcase_tc_seq and
+				otl.otm_testcase_plan_tp_seq='$tp_seq' and
+				otl.tl_seq=otr.otm_testcase_link_tl_seq
+			group by tc_seq
+		";
+		$query = $this->db->query($str_sql_cnt);
+		$tc_result_arr = array();
+		$i=0;
+		foreach ($query->result() as $temp_row)
+		{
+			$close_cnt = ($temp_row->result_cnt)?1:0;
+			
+			$tc_result_arr[$i]['pid'] = $temp_row->tl_inp_pid;
+			$tc_result_arr[$i]['total_cnt'] = 0;
+			$tc_result_arr[$i]['close_cnt'] = $close_cnt;
+			$i++;			
+		}
+
+		//print_r($tc_result_arr);
+		//exit;
+		
+		
+		$return_arr = array();
+		$this->db->select('ri.ri_seq,ri.ri_subject,rtm.otm_testcase_tc_seq as tc_seq');//,otl.tl_inp_pid
+		$this->db->where('ri.otm_project_pr_seq', $data['pr_seq']);
+		
+		$this->db->join('otm_risk_tc_mapping as rtm','ri.ri_seq=rtm.otm_riskitem_ri_seq','left');
+		$this->db->join('otm_testcase_link otl','otl.otm_testcase_tc_seq=rtm.otm_testcase_tc_seq','left');
+		$this->db->where('otl.otm_testcase_plan_tp_seq', $tp_seq);
+
+		$query = $this->db->get('otm_riskitem as ri');
+
+		//return $this->db->last_query();
+		//exit;
+		foreach ($query->result() as $temp_row)
+		{		
+			$likelihood_point = 0;
+			$impat_point = 0;
+			$tc_inp_pid = "ts_".$temp_row->tc_seq;
+			
+			$temp_arr = array();
+
+			foreach ($riskfactor as $riskfactor_row)
+			{
+				if($riskitem_factor_vlaue[$temp_row->ri_seq]){
+					if($riskitem_factor_vlaue[$temp_row->ri_seq][$riskfactor_row->rf_seq]){						
+						if($riskitem_factor_vlaue[$temp_row->ri_seq][$riskfactor_row->rf_seq]->rifv_value > 0){
+
+							if($riskfactor_row->rf_type == 'likelihood'){
+								$likelihood_point += $riskpoint[$riskitem_factor_vlaue[$temp_row->ri_seq][$riskfactor_row->rf_seq]->rifv_value] * 1;
+							}else if($riskfactor_row->rf_type == 'impact'){
+								$impat_point += ($riskpoint[$riskitem_factor_vlaue[$temp_row->ri_seq][$riskfactor_row->rf_seq]->rifv_value]) * 1;
+							}
+						}
+					}
+				}
+			}
+			
+						
+			$temp_arr['final_point'] = $likelihood_point * $impat_point;
+			$temp_arr['riskarea'] = '';
+			$j = 0;
+			foreach ($riskarea as $riskarea_row)
+			{
+
+				$riskarea_row->name = $riskarea_row->pco_name;
+
+				if($temp_arr['riskarea'] == ''){
+					$check_point = $riskarea_row->pco_default_value * 1;
+
+					if($check_point <= $temp_arr['final_point']){
+						$temp_arr['riskarea'] = $riskarea_row->pco_name;
+						
+						/*$tc_result_arr[$i]['pid'] = $temp_row->tl_inp_pid;
+						$tc_result_arr[$i]['total_cnt'] = 0;
+						$tc_result_arr[$i]['close_cnt'] = $close_cnt;*/
+						
+						//$tmp_total_cnt = 0;
+						//$tmp_close_cnt = 0;
+						
+						for($i=0;$i<sizeof($tc_result_arr);$i++){
+							if($tc_inp_pid == $tc_result_arr[$i]['pid']){
+								//$tmp_total_cnt += 1;
+								//$tmp_close_cnt += $tc_result_arr[$i]['close_cnt'];		
+								
+								//$riskarea[$j]->total_cnt += 1;
+								//$riskarea[$j]->close_cnt += $tc_result_arr[$i]['close_cnt'];
+
+								$riskarea_row->total_cnt += 1;
+								$riskarea_row->close_cnt += $tc_result_arr[$i]['close_cnt'];
+							}
+						}
+						//$riskarea_row->total_cnt = $tmp_total_cnt;
+						//$riskarea_row->close_cnt = $tmp_close_cnt;
+
+						//$riskarea_row->total_cnt = $riskarea[$j]->total_cnt;
+						//$riskarea_row->close_cnt = $riskarea[$j]->close_cnt;						
+					}
+				}
+				$j++;
+			}
+		}
+		
+		return $riskarea;	
+		
+		//return '{success:true,data:[{name:"STA","total_cnt":"10","close_cnt":"5"},{name:"STTA","total_cnt":"30","close_cnt":"15"},{name:"ITA","total_cnt":"30","close_cnt":"10"},{name:"FTA","total_cnt":"35","close_cnt":"20"}]}';
+	}
+
+	function get_risk_tcresult_summary_excel($data)
+	{
+		$return_array_excel = array();
+		$data['return_type'] = "array";
+		$temp_array = $this->get_risk_tcresult_summary($data);
+		
+		for($i=0;$i<sizeof($temp_array);$i++){
+			$return_array_excel[$i]['Risk Area'] = $temp_array[$i]->name;
+			$return_array_excel[$i]['Connect a TestCase'] = $temp_array[$i]->total_cnt;
+			$return_array_excel[$i]['Run the TestCase'] = $temp_array[$i]->close_cnt;
+		}
+		return $return_array_excel;
+	}
+		
+
+	function get_risk_defect_into_excel($data)
+	{
+		$return_array_excel = array();
+		$data['return_type'] = "array";
+		$temp_array = $this->get_risk_defect_info($data);
+		
+		//for($i=0;$i<sizeof($temp_array);$i++){
+		//	$return_array_excel[$i]['Risk Area'] = $temp_array[$i]->name;
+		//	$return_array_excel[$i]['Connect a TestCase'] = $temp_array[$i]->total_cnt;
+		//	$return_array_excel[$i]['Run the TestCase'] = $temp_array[$i]->close_cnt;
+		//}
+		return $temp_array;
+	}
+
+	
+	/*function riskanalysis_riskarea_riskitem_chart($data)
+	{
+		$pr_seq = $data['pr_seq'];
+
+		$riskarea = array();
+		$riskarea = $this->code_list(array('pr_seq'=>$pr_seq, 'type'=>'riskarea'));
+
+		$riskpoint = array();
+		$riskpoint_arr = $this->code_list(array('pr_seq'=>$pr_seq, 'type'=>'riskpoint'));
+		for($i=0; $i<count($riskpoint_arr); $i++){
+			$riskpoint[$riskpoint_arr[$i]->pco_seq] = $riskpoint_arr[$i]->pco_default_value;
+		}
+
+		$this->db->where('otm_project_pr_seq', $data['pr_seq']);
+		$this->db->order_by('rf_type desc, rf_ord asc');
+		$query = $this->db->get('otm_riskfactor');
+		$riskfactor = $query->result();
+
+		$riskitem_factor_vlaue = array();
+		$query = $this->db->get('otm_riskitem_factor_value');
+		foreach ($query->result() as $temp_row)
+		{
+			$riskitem_factor_vlaue[$temp_row->otm_riskitem_ri_seq][$temp_row->otm_riskfactor_rf_seq] = $temp_row;
+		}
+		
+		$return_arr = array();
+		$this->db->select('ri_seq,ri_subject');
+		$this->db->where('otm_project_pr_seq', $data['pr_seq']);
+		//$this->db->order_by('ri_seq asc');
+		$query = $this->db->get('otm_riskitem');
+		foreach ($query->result() as $temp_row)
+		{		
+			$likelihood_point = 0;
+			$impat_point = 0;
+
+			$temp_arr = array();
+
+			foreach ($riskfactor as $riskfactor_row)
+			{
+				if($riskitem_factor_vlaue[$temp_row->ri_seq]){
+					if($riskitem_factor_vlaue[$temp_row->ri_seq][$riskfactor_row->rf_seq]){
+						//input value
+						if($riskitem_factor_vlaue[$temp_row->ri_seq][$riskfactor_row->rf_seq]->rifv_value > 0){
+
+							//point sum
+							if($riskfactor_row->rf_type == 'likelihood'){
+								$likelihood_point += $riskpoint[$riskitem_factor_vlaue[$temp_row->ri_seq][$riskfactor_row->rf_seq]->rifv_value] * 1;
+							}else if($riskfactor_row->rf_type == 'impact'){
+								$impat_point += ($riskpoint[$riskitem_factor_vlaue[$temp_row->ri_seq][$riskfactor_row->rf_seq]->rifv_value]) * 1;
+							}
+						}
+					}
+				}
+			}
+
+			$temp_arr['final_point'] = $likelihood_point * $impat_point;
+			$temp_arr['riskarea'] = '';
+			foreach ($riskarea as $riskarea_row)
+			{
+				$riskarea_row->name = $riskarea_row->pco_name;
+
+				if($temp_arr['riskarea'] == ''){
+					$check_point = $riskarea_row->pco_default_value * 1;
+
+					if($check_point <= $temp_arr['final_point']){
+						$temp_arr['riskarea'] = $riskarea_row->pco_name;
+						if(!$riskarea_row->cnt){
+							$riskarea_row->cnt = 1;
+						}else{
+							$riskarea_row->cnt++;
+						}
+					}				
+				}
+			}		
+			//$return_arr[] = $temp_arr;
+		}
+		
+		return $riskarea;
+		//return $return_arr;
+	}*/
+
+
+	function get_risk_defect_info($data)
+	{
+		$pr_seq = $data['pr_seq'];
+		//$tp_seq = $data['tp_seq'];
+		
+		$member_arr = array();
+		$query = $this->db->get('otm_member');
+		foreach ($query->result() as $row)
+		{
+			$member_arr[$row->mb_email] = $row->mb_name;
+		}
+
+		$code_arr = array();
+		$this->db->where('otm_project_pr_seq', $data['pr_seq']);
+		$query = $this->db->get('otm_project_code');
+		foreach ($query->result() as $row)
+		{
+			$code_arr[$row->pco_seq] = $row->pco_name;
+		}
+
+
+		$riskarea = array();
+		$riskarea = $this->code_list(array('pr_seq'=>$pr_seq, 'type'=>'riskarea'));
+
+		$riskpoint = array();
+		$riskpoint_arr = $this->code_list(array('pr_seq'=>$pr_seq, 'type'=>'riskpoint'));
+		for($i=0; $i<count($riskpoint_arr); $i++){
+			$riskpoint[$riskpoint_arr[$i]->pco_seq] = $riskpoint_arr[$i]->pco_default_value;
+		}
+
+		$this->db->where('otm_project_pr_seq', $data['pr_seq']);
+		$this->db->order_by('rf_type desc, rf_ord asc');
+		$query = $this->db->get('otm_riskfactor');
+		$riskfactor = $query->result();
+	
+		$riskitem_factor_vlaue = array();
+		$query = $this->db->get('otm_riskitem_factor_value');
+		foreach ($query->result() as $temp_row)
+		{
+			$riskitem_factor_vlaue[$temp_row->otm_riskitem_ri_seq][$temp_row->otm_riskfactor_rf_seq] = $temp_row;
+		}
+		
+
+		$return_arr = array();		
+		/*
+		* 검색 조건(pr_seq, tp_seq)에 해당하는 리스크 아이템과 연결된 스윗 목록
+		*/
+		$link_suite_list = array();
+
+		$this->db->select('ri.ri_seq, ri.ri_subject, rtm.otm_testcase_tc_seq, tl.tl_seq');
+		$this->db->from('otm_riskitem as ri');
+		$this->db->join('otm_risk_tc_mapping as rtm','rtm.otm_riskitem_ri_seq = ri.ri_seq');
+
+		$this->db->join('otm_testcase_link as tl','rtm.otm_testcase_tc_seq = tl.otm_testcase_tc_seq','left');
+		$this->db->where('tl.otm_testcase_plan_tp_seq',$data['tp_seq']);
+
+		$this->db->where('ri.otm_project_pr_seq', $data['pr_seq']);
+		//$this->db->order_by('ri_seq asc');
+		$query = $this->db->get();
+		foreach ($query->result() as $temp_row)
+		{		
+
+			//riskitem analysis final point
+			// final point = (likelihood point sum) * (impact point sum)
+			$likelihood_point = 0;
+			$impat_point = 0;
+
+			$temp_arr = array();
+			$temp_arr['ri_seq'] = $temp_row->ri_seq;
+			$temp_arr['ri_subject'] = $temp_row->ri_subject;
+			$temp_arr['tc_seq'] = $temp_row->otm_testcase_tc_seq;
+
+			foreach ($riskfactor as $riskfactor_row)
+			{
+				if($riskitem_factor_vlaue[$temp_row->ri_seq]){
+					if($riskitem_factor_vlaue[$temp_row->ri_seq][$riskfactor_row->rf_seq]){
+						//input value
+						if($riskitem_factor_vlaue[$temp_row->ri_seq][$riskfactor_row->rf_seq]->rifv_value > 0){
+
+							//point sum
+							if($riskfactor_row->rf_type == 'likelihood'){
+								$likelihood_point += $riskpoint[$riskitem_factor_vlaue[$temp_row->ri_seq][$riskfactor_row->rf_seq]->rifv_value] * 1;
+							}else if($riskfactor_row->rf_type == 'impact'){
+								$impat_point += ($riskpoint[$riskitem_factor_vlaue[$temp_row->ri_seq][$riskfactor_row->rf_seq]->rifv_value]) * 1;
+							}
+						}
+					}
+				}
+			}
+
+			$temp_arr['check'] = count($riskfactor).' : '.$likelihood_point .' : '. $impat_point;
+
+			$temp_arr['final_point'] = $likelihood_point * $impat_point;
+
+			$temp_arr['riskarea'] = '';
+			foreach ($riskarea as $riskarea_row)
+			{
+				if($temp_arr['riskarea'] == ''){
+					$check_point = $riskarea_row->pco_default_value * 1;
+
+					if($check_point <= $temp_arr['final_point']){
+						$temp_arr['riskarea'] = $riskarea_row->pco_name;
+					}				
+				}
+			}
+			$link_suite_list[] = $temp_arr;
+		}
+
+		/*
+		* 리스크 아이템과 연결된 스윗을 부모로 가지고
+		* 검색 조건(pr_seq, tp_seq)에 해당하는 테스트 케이스에서
+		* 수행(실행)을 통하여 등록된 결함 목록
+		*/
+		for($i=0; $i<count($link_suite_list); $i++)
+		{
+			$this->db->from('otm_testcase as tc');
+			$this->db->join('otm_testcase_link as tl','tc.tc_seq = tl.otm_testcase_tc_seq','left');
+			$this->db->where('tl.otm_testcase_plan_tp_seq',$data['tp_seq']);
+
+			$this->db->join('otm_testcase_result as tr','tl.tl_seq = tr.otm_testcase_link_tl_seq','left');
+			$this->db->join('otm_defect as df','tr.tr_seq = df.otm_testcase_result_tr_seq','left');
+			$this->db->where('df_subject !=', '');
+
+			$this->db->join('otm_defect_assign as da','df.df_seq = da.otm_defect_df_seq','left');
+			$this->db->where('tl.tl_inp_pid', 'ts_'.$link_suite_list[$i]['tc_seq']);
+			$this->db->where('tc.otm_project_pr_seq', $data['pr_seq']);
+
+			//$this->db->order_by('ri_seq asc');
+			$query = $this->db->get();
+			foreach ($query->result() as $temp_row)
+			{		
+				$temp_df_arr['risk_area'] = $link_suite_list[$i]['riskarea'];
+				$temp_df_arr['df_subject'] = $temp_row->df_subject;
+				$temp_df_arr['df_status'] = $code_arr[$temp_row->dc_current_status_co_seq];
+				$temp_df_arr['df_author'] = $member_arr[$temp_row->dc_to];
+				$temp_df_arr['df_writer'] = $member_arr[$temp_row->writer];
+				$temp_df_arr['df_regdate'] = date("Y-m-d",strtotime($temp_row->regdate));
+
+				$return_arr[] = $temp_df_arr;
+			}
+		}
+		//return $this->db->last_query();
+		return $return_arr;
 	}
 }
 //End of file report_m.php

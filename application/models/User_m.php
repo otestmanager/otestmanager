@@ -235,7 +235,7 @@ class User_m extends CI_Model
 		$data['last_update'] = $date;
 
 		$this->db->insert('otm_member',$data);
-		$result = $this->db->insert_id();
+		//$result = $this->db->insert_id();
 		return 'ok';
 	}
 

@@ -453,18 +453,7 @@ function riskanalysis_code_actioin_control(type,action){
 		var title = '';
 		var items = [];
 
-		title = Otm.com_add;
-		items = [{
-			xtype	: 'hiddenfield',
-			id		: type+'_save_type',
-			value	: 'create'
-		},{
-			xtype	: 'textfield',
-			fieldLabel: type+'(*)',
-			minLength:1,maxLength:100,
-			id		: type+'_name',
-			allowBlank: false
-		}];
+
 
 		switch(type){
 			case "riskarea":
@@ -499,6 +488,10 @@ function riskanalysis_code_actioin_control(type,action){
 					id		: type+'_pco_2',
 					//allowBlank: false
 					hidden	: true
+				},{
+					xtype	: 'label',
+					style	: 'font-size:11px;color:red;',
+					html	: '※리스크 영역 경계값 점수는 리스크 아이템 최고 점수와 최하 점수 사이의 값으로 설정하면 됩니다.<br>[ 리스크 아이템 점수 = sum(리스크 팩터(Likelihood) 점수) * sum(리스크 팩터(Impact) 점수) ]'
 				}];
 				break;
 			case "riskpoint":
@@ -526,6 +519,37 @@ function riskanalysis_code_actioin_control(type,action){
 					allowBlank: false
 				}];
 
+
+				break;
+			case "testlevel":
+				title = Otm.com_add;
+				items = [{
+					xtype	: 'hiddenfield',
+					id		: type+'_save_type',
+					value	: 'create'
+				},{
+					xtype	: 'textfield',
+					fieldLabel: '테스트 레벨명(*)',
+					minLength:1,maxLength:100,
+					id		: type+'_name',
+					allowBlank: false
+				}];
+
+				break;
+			case "likelihood":
+			case "impact":
+				title = Otm.com_add;
+				items = [{
+					xtype	: 'hiddenfield',
+					id		: type+'_save_type',
+					value	: 'create'
+				},{
+					xtype	: 'textfield',
+					fieldLabel: '팩터명(*)',
+					minLength:1,maxLength:100,
+					id		: type+'_name',
+					allowBlank: false
+				}];
 
 				break;
 			default:

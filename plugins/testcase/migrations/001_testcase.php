@@ -182,8 +182,7 @@ class Migration_testcase extends CI_Migration {
 	{		
 	}	
 	function insert_sample_data()
-	{
-		$default_writer = "admin@sta.co.kr";
+	{		
 		$str_sql = "INSERT INTO otm_testcase_plan VALUES (1,1,'1차수','','0000-00-00 00:00:00','0000-00-00 00:00:00','play','admin@sta.co.kr','2015-04-17 15:54:45','admin@sta.co.kr','2015-04-17 15:54:45','','','','','')";
 		$this->db->query($str_sql);
 		

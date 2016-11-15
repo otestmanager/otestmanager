@@ -39,8 +39,6 @@ class FileDownload extends Controller {
 		$filepath = addslashes($filepath);
 		$filepath = trim(mb_convert_encoding($filepath,"euckr","utf-8"));
 
-		$original = trim(mb_convert_encoding($arr[0]->of_source,"euckr","utf-8"));
-
 		if (file_exists($filepath)) {
 			print "{success:true,msg:'ok'}";
 		}else{
@@ -71,7 +69,7 @@ class FileDownload extends Controller {
 			$original = trim(mb_convert_encoding($arr[0]->of_source,"euckr","utf-8"));
 
 			if (file_exists($filepath)) {
-				if(eregi("msie", $_SERVER[HTTP_USER_AGENT]) && eregi("5\.5", $_SERVER[HTTP_USER_AGENT])) {
+				if(preg_match("/msie/i", $_SERVER[HTTP_USER_AGENT]) && preg_match("/5\.5/i", $_SERVER[HTTP_USER_AGENT])) {
 					header("content-type: doesn/matter");
 					header("content-length: ".filesize("$filepath"));
 					header("content-disposition: attachment; filename=\"$original\"");
@@ -213,7 +211,7 @@ class FileDownload extends Controller {
 			$original = trim(mb_convert_encoding($arr[0]->of_source,"euckr","utf-8"));
 
 			if (file_exists($filepath)) {
-				if(eregi("msie", $_SERVER[HTTP_USER_AGENT]) && eregi("5\.5", $_SERVER[HTTP_USER_AGENT])) {
+				if(preg_match("/msie/i", $_SERVER[HTTP_USER_AGENT]) && preg_match("/5\.5/i", $_SERVER[HTTP_USER_AGENT])) {
 					header("content-type: doesn/matter");
 					header("content-length: ".filesize("$filepath"));
 					header("content-disposition: attachment; filename=\"$original\"");

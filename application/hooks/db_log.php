@@ -15,7 +15,11 @@ class Db_log {
     function logQueries() {
 		if(ENVIRONMENT === 'development')
 		{
-			@chmod(APPPATH . 'logs', 0707);
+			$error_rep = error_reporting();
+			error_reporting(0);
+			chmod(APPPATH . 'logs', 0707);
+			error_reporting($error_rep);
+
 			$filepath = APPPATH . 'logs/QueryLog-' . date('Y-m-d') . '.log'; // Filepath. File is created in logs folder with name QueryLog
 			$handle = fopen($filepath, "a+"); // Open the file
 

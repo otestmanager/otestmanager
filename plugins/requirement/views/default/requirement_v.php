@@ -7,7 +7,284 @@
  include_once($data['skin_dir'].'/locale-'.$data['mb_lang'].'.php');
 ?>
 <script type="text/javascript">
+var customform_seq = new Array();
 var project_seq = '<?=$project_seq?>';
+
+function viewImportWin_requirement()
+{
+	var win = Ext.getCmp('requirement_import_window');
+	if(win){
+		Ext.getCmp('form_file').clearOnSubmit = true;
+		Ext.getCmp("requirement_uploadPanel").reset();
+		Ext.getCmp('form_file').clearOnSubmit = false;
+		Ext.getCmp("requirement_uploadPanel").update();
+
+		win.show();
+		return;
+	}
+
+	var tmp_grid_column = requirement_grid_column.slice();
+	for(var i=0;i<tmp_grid_column.length;i++){
+		tmp_grid_column[i].hidden = false;
+		tmp_grid_column[i].minWidth = 10;
+		tmp_grid_column[i].flex = 1;
+		switch(tmp_grid_column[i].dataIndex){
+			case "req_assign":
+			case "writer":
+			case "regdate":
+				tmp_grid_column[i].hidden = true;
+			break;
+			default:
+			break;
+		}
+	}
+
+	var req_sample_grid = Ext.create("Ext.grid.Panel",{
+			id:'req_sample_grid',
+			border:true,
+			forceFit: true,
+			columns:tmp_grid_column
+		});
+	
+
+	var checck_id_checkbox = {
+		hidden: true,
+		xtype: 'radiogroup',	width:'100%',
+		id:'import_check_id',
+		fieldLabel : 'Check ID',
+		columns: 2,
+		items: [{
+			boxLabel:'Insert All',
+			name : 'import_check_id',
+			inputValue : false,
+			checked:false
+		},{
+			boxLabel:'Insert and Update',
+			name : 'import_check_id',
+			inputValue : true,
+			checked:true
+		}]
+	}
+
+	var requirement_uploadPanel = new Ext.FormPanel({
+		fileUpload: true,
+		id:'requirement_uploadPanel',
+		border:false,
+		bodyStyle: 'padding: 5px;',
+		labelWidth: 1,
+		defaults: {
+			allowBlank: false
+		},
+		items: [{
+			height: 10,
+			border:false
+		},{
+			xtype: 'filefield',
+			name : 'form_file',
+			id : 'form_file',
+			clearOnSubmit : false,
+			regex: /^.*\.(xls|XLS)$/,
+			regexText: 'Only xls files allowed',
+			anchor:'100%',
+			allowBlank : false,
+			reference: 'basicFile'
+		},{
+			height: 20,
+			border:false
+		},
+			checck_id_checkbox,
+		{
+			xtype:'label',
+			html:'Example : [Max Rows : 1000, Max Columns : 50]'
+		},req_sample_grid],
+		buttons: [pbar,{
+			text:Otm.com_save,
+			formBind: true,
+			iconCls:'ico-save',
+			id:'testCaseImportSubmitBtn',
+			handler: function(){
+				var params = {
+							project_seq	: project_seq,
+							import_check_id : true,
+							update : false
+						};
+				//var chkInfo = Ext.getCmp('import_check_id').items;
+				//if(chkInfo.items[1].checked){
+					params.import_check_id = true;
+				//}
+
+				requirement_uploadPanel_submit(params);
+			}
+		}]
+	});
+
+	var import_window = Ext.create('Ext.window.Window', {
+		title: Otm.com_import+'(.xls)',
+		id	: 'requirement_import_window',
+		height: 230,
+		width: 650,
+		layout: 'fit',
+		resizable : true,
+		modal : true,
+		constrainHeader: true,
+		closeAction: 'hide',
+		items: [requirement_uploadPanel]
+	});
+
+	import_window.show();
+}
+
+function select_excel_sheet_requirement(sheets,params)
+{
+	if(Ext.getCmp('select_excel_sheet_requirement_window')){
+		Ext.getCmp('select_excel_sheet_requirement_window').removeAll();
+	}else{
+		Ext.create('Ext.window.Window', {
+			title: 'Select Sheet',
+			id	:'select_excel_sheet_requirement_window',
+			height: 130,
+			width: 380,
+			layout: 'fit',
+			resizable : false,
+			modal : true,
+			constrainHeader: true,
+			closeAction: 'hide',
+			items: []
+		});
+	}
+
+	var store = Ext.create('Ext.data.Store', {
+		fields:['index', 'name'],
+		data:{'items':[]},
+		proxy: {
+			type: 'memory',
+			reader: {
+				type: 'json',
+				rootProperty: 'items'
+			}
+		}
+	});
+
+	for(var i=0; i<sheets.length; i++)
+	{
+		store.add({
+			index	: i,
+			name : sheets[i]
+		});
+	}
+
+	var combo = Ext.create('Ext.form.ComboBox', {
+		id			: 'sheet_name_combo',
+		editable	: false,
+		width		: '100%',
+		fieldLabel	: 'Sheet list',
+		displayField: 'name',
+		valueField	: 'index',
+		store		: store,
+		allowBlank	: true,
+		queryParam	: 'q',
+		queryMode	: 'local'
+	});
+
+	var select_excel_sheet_requirement = new Ext.FormPanel({
+		border:false,
+		bodyStyle: 'padding: 5px;',
+		labelWidth: 1,
+		defaults: {
+			allowBlank: false
+		},
+		items: [{
+			height: 10,
+			border:false
+		},combo],
+		buttons: [{
+			text:Otm.com_save,
+			iconCls:'ico-save',
+			handler: function(){
+				var value = Ext.getCmp('sheet_name_combo').getValue();
+				if(value != null){
+					params.sheet_index = value;
+					Ext.getCmp('select_excel_sheet_requirement_window').hide();
+					requirement_uploadPanel_submit(params);
+				}else{
+					Ext.Msg.alert('OTM','Please, Select Sheet.');
+				}
+			}
+		}]
+	});
+
+	Ext.getCmp('select_excel_sheet_requirement_window').add(select_excel_sheet_requirement);
+	Ext.getCmp('select_excel_sheet_requirement_window').show();
+}
+
+function requirement_uploadPanel_submit(params)
+{
+	if(Ext.getCmp("requirement_uploadPanel").getForm().isValid()){
+		top.myUpdateProgress(1,'Data Loadding...');
+
+		var URL = "./index.php/Import/plugin/requirement/import_requirement";
+
+		Ext.getCmp("requirement_uploadPanel").mask(Otm.com_msg_processing_data);
+
+		Ext.getCmp("requirement_uploadPanel").getForm().submit({
+			url: URL,
+			method:'POST',
+			params: params,
+			success: function(form, action){
+				top.myUpdateProgress(100,'End');
+
+				var obj = Ext.decode(action.response.responseText);
+				if(obj.sheet_count && obj.sheet_count>1)
+				{
+					Ext.getCmp("requirement_uploadPanel").unmask();
+
+					select_excel_sheet_requirement(obj.sheet_names,params);
+					return;
+				}
+
+				Ext.getCmp("requirement_requirementGrid").getStore().reload();
+
+				Ext.getCmp("requirement_uploadPanel").unmask();
+				Ext.getCmp("requirement_import_window").hide();
+			},
+			failure: function(form, action){
+				var obj = Ext.decode(action.response.responseText);
+
+				var msg = Ext.decode(obj.msg);
+				if(msg.over){
+					Ext.Msg.alert('OTM',msg.over);
+
+					top.myUpdateProgress(100,'End');
+					Ext.getCmp("requirement_uploadPanel").unmask();
+					return;
+				}else if(msg.duplicate_id){
+					Ext.Msg.confirm('OTM',Otm.com_msg_duplicate_id,function(bt){
+						if(bt=='yes'){
+
+							var params = {
+								project_seq	: project_seq,
+								import_check_id : true,
+								update : true
+							};
+
+							requirement_uploadPanel_submit(params);
+
+						}else{
+							Ext.getCmp("requirement_import_window").hide();
+							return;
+						}
+					})
+
+				}else{
+					Ext.Msg.alert('OTM',msg.msg);
+				}
+
+				top.myUpdateProgress(100,'End');
+				Ext.getCmp("requirement_uploadPanel").unmask();
+			}
+		});
+	}
+}
 
 var requirement_customform_store = Ext.create('Ext.data.Store', {
 	fields:['item'],
@@ -28,7 +305,7 @@ var requirement_customform_store = Ext.create('Ext.data.Store', {
 			rootProperty: 'data'
 		}
 	},
-	autoLoad:true
+	autoLoad:false
 });
 var project_user_store = Ext.create('Ext.data.Store', {
 	fields:['pm_seq','mb_email','mb_name'],
@@ -717,6 +994,34 @@ function requirement_center_click(smObj, record, rowIndex)
 
 	return;
 }
+function requirement_center_beforeshow(smObj, record, rowIndex)
+{	
+	requirement_customform_store.load({
+		callback: function(r,options,success){
+			for(var i=0;i<r.length;i++){
+				var add_chk = true;
+				for(var key in requirement_grid_column){
+					if(requirement_grid_column[key].dataIndex == "_"+r[i].data.pc_seq){
+						add_chk = false;
+						break;
+					}
+				}
+				if(add_chk){
+					if(r[i].data.pc_is_display == 'Y'){
+						requirement_grid_column.push({
+							 header: r[i].data.pc_name,  dataIndex: "_"+r[i].data.pc_seq, align:'center'
+						});
+					}else{
+						requirement_grid_column.push({
+							 header: r[i].data.pc_name,  hidden:true, dataIndex: "_"+r[i].data.pc_seq, align:'center'
+						});
+					}
+				}
+			}
+			Ext.getCmp('requirement_requirementGrid').reconfigure(undefined,requirement_grid_column);
+		}
+	});
+}
 
 var requirement_addBtn = {
 	xtype	: 'button',
@@ -751,16 +1056,17 @@ var requirement_exportBtn = {
 	xtype	: 'button',
 	iconCls	: 'ico-export',
 	text	: Otm.com_export,
-	disabled: true,
+	//disabled: true,
 	handler	: function (btn){
-		//export_data('plugin/requirement/export','project_seq=<?=$project_seq?>');
+		export_data('plugin/requirement/export','project_seq='+project_seq);
 	}
 };
 var requirement_importBtn = {
 	xtype	: 'button', text: Otm.com_import,
 	iconCls	:'ico-import',
-	disabled: true,
+	//disabled: true,
 	handler	: function (btn){
+		viewImportWin_requirement();
 	}
 };
 
@@ -800,6 +1106,16 @@ var requirement_store = Ext.create('Ext.data.Store', {
 	autoLoad:false
 });
 
+var requirement_grid_column = [
+	{header: Otm.requirement.subject,	dataIndex: 'req_subject',		minWidth:300,		flex: 3},
+	{header: '중요도',					dataIndex: 'req_priority',		minWidth:50},
+	{header: '난이도',					dataIndex: 'req_difficulty',		minWidth:50},
+	{header: '수용여부',				dataIndex: 'req_accept',		minWidth:50},
+	{header: '담당자',				dataIndex: 'req_assign',		minWidth:50},
+	{header: Otm.com_creator,			dataIndex: 'writer',		minWidth:80},
+	{header: Otm.com_date,				dataIndex: 'regdate',		minWidth:80}
+]
+
 
 var requirement_center_panel =  {
 	region	: 'center',
@@ -808,23 +1124,18 @@ var requirement_center_panel =  {
 	id		: 'requirement_requirementGrid',
 	multiSelect: true,
 	store	: requirement_store,
-	columns	: [
-		{header: Otm.requirement.subject,	dataIndex: 'req_subject',		minWidth:300,		flex: 3},
-		//{header: 'ID',					dataIndex: 'req_id',		minWidth:80},
-		{header: '중요도',					dataIndex: 'req_priority',		minWidth:50},
-		{header: '난이도',					dataIndex: 'req_difficulty',		minWidth:50},
-		{header: '수용여부',				dataIndex: 'req_accept',		minWidth:50},
-
-		{header: '담당자',				dataIndex: 'req_assign',		minWidth:50},
-
-		{header: Otm.com_creator,			dataIndex: 'writer',		minWidth:80},
-		{header: Otm.com_date,				dataIndex: 'regdate',		minWidth:80}
-	],
+	columns	: requirement_grid_column,
 	tbar:[requirement_addBtn,'-',requirement_editBtn,'-',requirement_deleteBtn,'-',requirement_assignBtn,'-',requirement_exportBtn,'-',requirement_importBtn],
+	bbar:Ext.create('Ext.PagingToolbar', {
+		id:'requirement_page',
+		store: requirement_store,
+		displayInfo: true
+	}),	
 	listeners:{
 		scope:this,
-		select: requirement_center_click
-	}
+		select: requirement_center_click,
+		afterrender: requirement_center_beforeshow
+	}	
 }		
 
 Ext.onReady(function(){

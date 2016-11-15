@@ -31,6 +31,19 @@ class Report extends Controller {
 		}
 	}
 
+	/**
+	* Function return_json
+	*
+	* @param array $temp_arr Array Data
+	*
+	* @return string
+	*/
+	public function return_json($temp_arr)
+	{
+		return '{success:true,totalCount: '.count($temp_arr).', data:'.json_encode($temp_arr).'}';
+	}
+
+
 	function report_list()
 	{
 		switch($this->session->userdata('mb_lang')){
@@ -117,7 +130,7 @@ class Report extends Controller {
 		);
 		$report_defect_column	= $this->report_m->get_report_column($data);
 		$report_defect_data		= $this->report_m->get_report_defect_status_data($data,$report_defect_column);
-		
+
 		return "{success:true,columns: ".json_encode($report_defect_column).", data:".json_encode($report_defect_data)."}";
 	}
 
@@ -175,6 +188,9 @@ class Report extends Controller {
 
 		$plan_tc_result_columns	= $this->report_m->get_testcase_result_summary_columns($data);
 		$plan_tc_result_data		= $this->report_m->get_report_plan_result_summary_data($data,$plan_tc_result_columns);
+
+		//print $plan_tc_result_data;
+		//exit;
 				
 		return "{success:true,columns: ".json_encode($plan_tc_result_columns).", data:".json_encode($plan_tc_result_data)."}";
 	}
@@ -332,7 +348,6 @@ class Report extends Controller {
 		
 		$plan_tc_result_columns	= $this->report_m->get_plan_tc_result_columns($data);
 		$plan_tc_result_data	= $this->report_m->get_plan_tc_result_data($data,$plan_tc_result_columns);
-		//return $plan_tc_result_data;
 		
 		print "{success:true,columns: ".json_encode($plan_tc_result_columns).", data:".json_encode($plan_tc_result_data)."}";		
 	}
@@ -387,6 +402,7 @@ class Report extends Controller {
 		if($data['tp_seq']){
 			$testcase_result_columns	= $this->report_m->get_testcase_result_summary_columns($data);
 			$plan_testcase_result = $this->report_m->get_plan_testcase_result_list($data,$testcase_result_columns);
+			
 			print "{success:true, data:".json_encode($plan_testcase_result)."}";
 		}else{
 			return '{success:true,totalCount:0,data:[]}';
@@ -456,6 +472,17 @@ class Report extends Controller {
 				$tmp_data = $this->report_m->get_plan_testcase_result_excel($data);
 				array_push($report_data,$tmp_data);
 			break;
+			case "risk_defect_summary_grid":
+				$tmp_data = $this->report_m->get_risk_defect_summary_excel($data);
+				array_push($report_data,$tmp_data);
+			break;
+			case "risk_tcresult_summary_grid":
+				$tmp_data = $this->report_m->get_risk_tcresult_summary_excel($data);
+				array_push($report_data,$tmp_data);
+			case "risk_defect_into_panel":
+				$tmp_data = $this->report_m->get_risk_defect_into_excel($data);
+				array_push($report_data,$tmp_data);
+			break;
 			default:
 			break;
 		}
@@ -505,6 +532,53 @@ class Report extends Controller {
 		}else{
 			return '{success:true,totalCount:0,data:[]}';
 		}		
+	}
+
+	function get_risk_defect_summary()
+	{
+		$data = array(
+			'pr_seq' => $this->input->post_get('pr_seq',true),
+			'tp_seq' => $this->input->post_get('tp_seq',true)
+		);
+
+		if($data['pr_seq']){
+			return $this->return_json($this->report_m->get_risk_defect_summary($data));						
+		}else{
+			return '{success:true,totalCount:0,data:[]}';
+		}
+
+		//return '{success:true,data:[{name:"STA","open_cnt":"1","close_cnt":"2","total_cnt":"3"},{name:"STTA","open_cnt":"3","close_cnt":"4","total_cnt":"7"},{name:"ITA","open_cnt":"2","close_cnt":"2","total_cnt":"4"},{name:"FTA","open_cnt":"7","close_cnt":"6","total_cnt":"13"}]}';
+	}
+
+	function get_risk_tcresult_summary()
+	{
+		$data = array(
+			'pr_seq' => $this->input->post_get('pr_seq',true),
+			'tp_seq' => $this->input->post_get('tp_seq',true)
+		);
+
+		if($data['pr_seq']){
+			//return $this->report_m->get_risk_tcresult_summary($data);
+			return $this->return_json($this->report_m->get_risk_tcresult_summary($data));
+		}else{
+			return '{success:true,totalCount:0,data:[]}';
+		}
+	}
+
+	function get_risk_defect_info()
+	{
+		$data = array(
+			'pr_seq' => $this->input->post_get('pr_seq',true),
+			'tp_seq' => $this->input->post_get('tp_seq',true)
+		);
+
+		if($data['pr_seq']){
+			return $this->return_json($this->report_m->get_risk_defect_info($data));
+		}else{
+			return '{success:true,totalCount:0,data:[]}';
+		}
+
+		return '{success:true,totalCount: 8, data:[{"risk_area":"STA","df_subject":"결함1","df_status":"신규","df_author":"관리자","df_writer":"관리자","df_regdate":"2016-08-01"},{"risk_area":"STA","df_subject":"결함2","df_status":"개설","df_author":"관리자","df_writer":"관리자","df_regdate":"2016-08-01"},{"risk_area":"STTA","df_subject":"결함3","df_status":"완료","df_author":"관리자","df_writer":"관리자","df_regdate":"2016-08-01"},{"risk_area":"FTA","df_subject":"결함4","df_status":"완료","df_author":"관리자","df_writer":"관리자","df_regdate":"2016-08-01"},{"risk_area":"STA","df_subject":"결함5","df_status":"신규","df_author":"관리자","df_writer":"관리자","df_regdate":"2016-08-01"},{"risk_area":"FTA","df_subject":"결함6","df_status":"개설","df_author":"관리자","df_writer":"관리자","df_regdate":"2016-08-01"},{"risk_area":"STA","df_subject":"결함7","df_status":"신규","df_author":"관리자","df_writer":"관리자","df_regdate":"2016-08-01"},{"risk_area":"ITA","df_subject":"결함8","df_status":"완료","df_author":"관리자","df_writer":"관리자","df_regdate":"2016-08-01"},]}';
 	}
 }
 //End of file report.php

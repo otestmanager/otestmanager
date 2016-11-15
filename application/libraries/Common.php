@@ -63,6 +63,8 @@ class CI_Common
 	}
 
 	function segment_explode($seg) { //세크먼트 앞뒤 '/' 제거후 uri를 배열로 반환
+		$error_rep = error_reporting();
+		error_reporting(0);
 		$len = strlen($seg);
 		
 		if(substr($seg, 0, 1) == '/') {
@@ -74,7 +76,7 @@ class CI_Common
 			$seg = substr($seg, 0, $len-1);
   		}
   		
-		if(strpos(@$seg,'?'))
+		if(strpos($seg,'?'))
 		{
 			$seg_qexp = explode("?", $seg);
 			$qseg_len = strlen($seg_qexp[0]);
@@ -92,7 +94,7 @@ class CI_Common
 		}
 	
 		// 쿼리스트링을 key(query_string)로 하여 배열로 반환
-		if(@$seg_query_str and (substr(@$seg_query_str,0,1) == '?'))
+		if($seg_query_str and (substr($seg_query_str,0,1) == '?'))
 		{
 			$result=array();
 			$str_cnt = strlen($seg_query_str);
@@ -118,7 +120,8 @@ class CI_Common
 			//쿼리스트링을 제거한 배열과 쿼리스트링을 배열화한 것을 합쳐서 반환
 
 			$seg_exp = array_merge($seg_exp, $d_arr);
-		}		
+		}
+		error_reporting($error_rep);
 		return $seg_exp;
 	}
 
@@ -131,17 +134,19 @@ class CI_Common
 	 */
 	function segment_implode($url, $add_url, $del_url='') 
 	{
-		if (@$url['query_string']) 
+		$error_rep = error_reporting();
+		error_reporting(0);
+		if ($url['query_string']) 
 		{
 			//print_r($url['query_string']);
 			//쿼리스트링 만들기
 			$q_str = $url['query_string'];
 			//쿼리스트링을 키와 값으로 분리
 			$qurey_string_key = array_keys($q_str);
-			$qurey_string_val = array_values($q_str);
+			//$qurey_string_val = array_values($q_str);
 
 			$key_cnt = count($qurey_string_key);
-			$val_cnt = count($qurey_string_val);
+			//$val_cnt = count($qurey_string_val);
 
 			if ($del_url) 
 			{
@@ -149,7 +154,7 @@ class CI_Common
 				{
 					$arr_key = array_keys($qurey_string_key, $durls);
 
-					if (@$arr_key[0] == '0') 
+					if ($arr_key[0] == '0') 
 					{
 						//배열에서 처음에 위치할때
 						array_shift($qurey_string_key);
@@ -161,17 +166,17 @@ class CI_Common
 						} else {
 							$q_str = array_combine($qurey_string_key, $qurey_string_val);
 						}
-					} elseif(@$arr_key[0] > 0 and @$arr_key[0] < $key_cnt-1) {
+					} elseif($arr_key[0] > 0 and $arr_key[0] < $key_cnt-1) {
 						//배열 중간에 위치할때
-						$f1 = array_splice($qurey_string_key, @$arr_key[0]);
-						$f2 = array_splice($qurey_string_val, @$arr_key[0]);
+						$f1 = array_splice($qurey_string_key, $arr_key[0]);
+						$f2 = array_splice($qurey_string_val, $arr_key[0]);
 						if(count($f1) == '0' and count($f2) == '0') 
 						{
 							$q_str = array();
 						} else {
 							$q_str = array_combine($f1, $f2);
 						}
-					} elseif(@$arr_key[0] == $key_cnt-1) {
+					} elseif($arr_key[0] == $key_cnt-1) {
 						//배열 맨 마지막에 위치할때
 						array_pop($qurey_string_key);
 						array_pop($qurey_string_val);
@@ -207,7 +212,8 @@ class CI_Common
 				$last_url = "/".$s_url."/?".$q1_url;
 			} else {
 				$last_url = "/".$s_url;
-			}
+			}		
+			error_reporting($error_rep);
 			return $last_url;
 		} else {
 			if ($add_url) 
@@ -218,9 +224,11 @@ class CI_Common
 				}
 				$q1_url = implode('&', $q_url);
 				$s_url = implode('/', $url);
+				error_reporting($error_rep);
 				return "/".$s_url."/?".$q1_url;
 			} else {
 				$s_url = implode('/', $url);
+				error_reporting($error_rep);
 				return "/".$s_url;
 			}
 		}

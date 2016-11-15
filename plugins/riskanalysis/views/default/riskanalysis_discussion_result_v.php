@@ -12,7 +12,7 @@ include_once($data['skin_dir'].'/'.$data['module_directory'].'_common.php');
 	* Center Panel
 	*/
 	var riskanalysis_discussion_result_store = Ext.create('Ext.data.Store', {
-		fields:['ri_seq', 'riskarea', 'ri_subject', 'final_point', 'risk_req_cnt', 'risk_tc_cnt'],
+		fields:['ri_seq', 'riskarea', 'ri_subject', {type:'int',name:'final_point'}, 'risk_req_cnt', 'risk_tc_cnt'],
 		pageSize: 50,
 		proxy: {
 			type	: 'ajax',
@@ -37,9 +37,17 @@ include_once($data['skin_dir'].'/'.$data['module_directory'].'_common.php');
 			//}
 		//},
 		//remoteGroup:true,
-		//remoteSort: false,
-		//sortInfo: {field: 'ora_rank', direction: 'ASC'},
-		groupField: 'ora_riskarea',
+		//remoteSort: true,
+		//sortInfo: {field: 'final_point', direction: 'ASC'},
+		sorters: [{
+			property: 'final_point',
+			direction: 'DESC'
+		}],
+		sortRoot: 'final_point',
+		sortOnLoad: true,
+		remoteSort: false,
+
+		//groupField: 'riskarea',
 		autoLoad:true
 	});
 
@@ -48,7 +56,7 @@ include_once($data['skin_dir'].'/'.$data['module_directory'].'_common.php');
 		layout	: 'fit',
 		xtype	: 'gridpanel',
 		id		: 'riskanalysis_discussion_result_list',
-		multiSelect: true,
+		multiSelect: false,
 		store	: riskanalysis_discussion_result_store,
 		features: [{
 			ftype: 'grouping',

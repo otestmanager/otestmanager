@@ -455,15 +455,15 @@ class Project_setup_m extends CI_Model
 		}else{
 			if($data['pco_is_required'] === 'Y'){
 				$str_sql = "update otm_project_code set pco_is_required='N' where otm_project_pr_seq='".$data['otm_project_pr_seq']."' and pco_type='".$data['pco_type']."'";
-				$query = $this->db->query($str_sql);
+				$this->db->query($str_sql);
 			}
 			if($data['pco_is_default'] === 'Y'){
 				$str_sql = "update otm_project_code set pco_is_default='N' where otm_project_pr_seq='".$data['otm_project_pr_seq']."' and pco_type='".$data['pco_type']."'";
-				$query = $this->db->query($str_sql);
+				$this->db->query($str_sql);
 			}
 
 			$this->db->insert('otm_project_code', $data);
-			$result = $this->db->insert_id();
+			//$result = $this->db->insert_id();
 			return 'ok';
 		}
 	}
@@ -489,11 +489,11 @@ class Project_setup_m extends CI_Model
 		}else{
 			if($data['pco_is_required'] === 'Y'){
 				$str_sql = "update otm_project_code set pco_is_required='N' where otm_project_pr_seq='".$data['otm_project_pr_seq']."' and pco_type='".$data['pco_type']."'";
-				$query = $this->db->query($str_sql);
+				$this->db->query($str_sql);
 			}
 			if($data['pco_is_default'] === 'Y'){
 				$str_sql = "update otm_project_code set pco_is_default='N' where otm_project_pr_seq='".$data['otm_project_pr_seq']."' and pco_type='".$data['pco_type']."'";
-				$query = $this->db->query($str_sql);
+				$this->db->query($str_sql);
 			}
 
 			$data2 = array(
@@ -556,7 +556,7 @@ class Project_setup_m extends CI_Model
 	function code_list_workflow_valuefield($data)
 	{
 		$project_seq = trim($data['project_seq']);
-		$rp_seq = trim($data['rp_seq']);
+		//$rp_seq = trim($data['rp_seq']);
 		$rp_type = trim($data['type']);
 
 
@@ -881,7 +881,7 @@ class Project_setup_m extends CI_Model
 		switch($data['pco_type'])
 		{
 			case "tc_id_rule":
-				$pattern = ",";
+				$pattern = "/,/";
 
 				$this->db->where('pco_type', 'df_id_rule');
 				$this->db->where('otm_project_pr_seq', $data['otm_project_pr_seq']);
@@ -891,7 +891,7 @@ class Project_setup_m extends CI_Model
 					$temp_arr[] = $temp_row;
 
 					$temp_default_value = $temp_row->pco_default_value;
-					$rule_arr = split($pattern,$temp_default_value);
+					$rule_arr = preg_split($pattern,$temp_default_value);
 
 					if(isset($rule_arr[0]) || $tmp_arr[0])
 					{
@@ -932,15 +932,15 @@ class Project_setup_m extends CI_Model
 	{
 		if($data['pco_is_required'] === 'Y'){
 			$str_sql = "update otm_project_code set pco_is_required='N' where pco_type='".$data['pco_type']."'";
-			$query = $this->db->query($str_sql);
+			$this->db->query($str_sql);
 		}
 		if($data['pco_is_default'] === 'Y'){
 			$str_sql = "update otm_project_code set pco_is_default='N' where pco_type='".$data['pco_type']."'";
-			$query = $this->db->query($str_sql);
+			$this->db->query($str_sql);
 		}
 
 		$this->db->insert('otm_project_code', $data);
-		$result = $this->db->insert_id();
+		//$result = $this->db->insert_id();
 		return 'ok';
 	}
 
@@ -959,7 +959,7 @@ class Project_setup_m extends CI_Model
 				case "use_df_id":
 					//해당 TC ID 체계를 사용중인 결함 ID 체계(pco_name)를 변경해준다.
 
-					$pattern = ",";
+					$pattern = "/,/";
 					$this->db->where('pco_type', 'df_id_rule');
 					$this->db->where('otm_project_pr_seq', $data['otm_project_pr_seq']);
 					$query = $this->db->get('otm_project_code');
@@ -968,7 +968,7 @@ class Project_setup_m extends CI_Model
 						$temp_arr[] = $temp_row;
 
 						$temp_default_value = $temp_row->pco_default_value;
-						$rule_arr = split($pattern,$temp_default_value);
+						$rule_arr = preg_split($pattern,$temp_default_value);
 
 						if(isset($rule_arr[0]) || $tmp_arr[0])
 						{

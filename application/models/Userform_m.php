@@ -34,7 +34,7 @@ class Userform_m extends CI_Model
 	{
 		$temp_arr = array();
 
-		$pr_seq = $data['pr_seq'];
+		//$pr_seq = $data['pr_seq'];
 
 		$this->db->select('cf_seq,cf_name,cf_category,cf_is_required,cf_is_display,cf_formtype,cf_default_value,cf_content,otm_customform.regdate,otm_member.mb_name as writer');
 		$this->db->from('otm_customform');

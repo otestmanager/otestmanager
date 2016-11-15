@@ -10,6 +10,259 @@ include_once($data['skin_dir'].'/'.$data['module_directory'].'_common.php');
 <script type="text/javascript">
 var project_seq = '<?=$project_seq?>';
 
+function viewImportWin_riskitem()
+{
+	var win = Ext.getCmp('riskitem_import_window');
+
+	if(win){
+		Ext.getCmp('form_file').clearOnSubmit = true;
+		Ext.getCmp("riskitem_uploadPanel").reset();
+		Ext.getCmp('form_file').clearOnSubmit = false;
+		Ext.getCmp("riskitem_uploadPanel").update();
+
+		win.show();
+		return;
+	}
+
+	var checck_id_checkbox = {
+		hidden: true,
+		xtype: 'radiogroup',	width:'100%',
+		id:'import_check_id',
+		fieldLabel : 'Check ID',
+		columns: 2,
+		items: [{
+			boxLabel:'Insert All',
+			name : 'import_check_id',
+			inputValue : false,
+			checked:false
+		},{
+			boxLabel:'Insert and Update',
+			name : 'import_check_id',
+			inputValue : true,
+			checked:true
+		}]
+	}
+
+	var riskitem_uploadPanel = new Ext.FormPanel({
+		fileUpload: true,
+		id:'riskitem_uploadPanel',
+		border:false,
+		bodyStyle: 'padding: 5px;',
+		labelWidth: 1,
+		defaults: {
+			allowBlank: false
+		},
+		items: [{
+			height: 10,
+			border:false
+		},{
+			xtype: 'filefield',
+			name : 'form_file',
+			id : 'form_file',
+			clearOnSubmit : false,
+			regex: /^.*\.(xls|XLS)$/,
+			regexText: 'Only xls files allowed',
+			anchor:'100%',
+			allowBlank : false,
+			reference: 'basicFile'
+		},{
+			height: 20,
+			border:false
+		},
+			checck_id_checkbox,
+		{
+			xtype:'label',
+			html:'Example : [Max Rows : 1000, Max Columns : 50]'
+		}],
+		buttons: [pbar,{
+			text:Otm.com_save,
+			formBind: true,
+			iconCls:'ico-save',
+			id:'testCaseImportSubmitBtn',
+			handler: function(){
+				var params = {
+							project_seq	: project_seq,
+							import_check_id : true,
+							update : false
+						};
+				//var chkInfo = Ext.getCmp('import_check_id').items;
+				//if(chkInfo.items[1].checked){
+					params.import_check_id = true;
+				//}
+
+				riskitem_uploadPanel_submit(params);
+			}
+		}]
+	});
+
+	var import_window = Ext.create('Ext.window.Window', {
+		title: Otm.com_import+'(.xls)',
+		id	: 'riskitem_import_window',
+		height: 230,
+		width: 650,
+		layout: 'fit',
+		resizable : true,
+		modal : true,
+		constrainHeader: true,
+		closeAction: 'hide',
+		items: [riskitem_uploadPanel]
+	});
+
+	import_window.show();
+}
+
+function select_excel_sheet_riskitem(sheets,params)
+{
+	if(Ext.getCmp('select_excel_sheet_riskitem_window')){
+		Ext.getCmp('select_excel_sheet_riskitem_window').removeAll();
+	}else{
+		Ext.create('Ext.window.Window', {
+			title: 'Select Sheet',
+			id	:'select_excel_sheet_riskitem_window',
+			height: 130,
+			width: 380,
+			layout: 'fit',
+			resizable : false,
+			modal : true,
+			constrainHeader: true,
+			closeAction: 'hide',
+			items: []
+		});
+	}
+
+	var store = Ext.create('Ext.data.Store', {
+		fields:['index', 'name'],
+		data:{'items':[]},
+		proxy: {
+			type: 'memory',
+			reader: {
+				type: 'json',
+				rootProperty: 'items'
+			}
+		}
+	});
+
+	for(var i=0; i<sheets.length; i++)
+	{
+		store.add({
+			index	: i,
+			name : sheets[i]
+		});
+	}
+
+	var combo = Ext.create('Ext.form.ComboBox', {
+		id			: 'sheet_name_combo',
+		editable	: false,
+		width		: '100%',
+		fieldLabel	: 'Sheet list',
+		displayField: 'name',
+		valueField	: 'index',
+		store		: store,
+		allowBlank	: true,
+		queryParam	: 'q',
+		queryMode	: 'local'
+	});
+
+	var select_excel_sheet_riskitem = new Ext.FormPanel({
+		border:false,
+		bodyStyle: 'padding: 5px;',
+		labelWidth: 1,
+		defaults: {
+			allowBlank: false
+		},
+		items: [{
+			height: 10,
+			border:false
+		},combo],
+		buttons: [{
+			text:Otm.com_save,
+			iconCls:'ico-save',
+			handler: function(){
+				var value = Ext.getCmp('sheet_name_combo').getValue();
+				if(value != null){
+					params.sheet_index = value;
+					Ext.getCmp('select_excel_sheet_riskitem_window').hide();
+					riskitem_uploadPanel_submit(params);
+				}else{
+					Ext.Msg.alert('OTM','Please, Select Sheet.');
+				}
+			}
+		}]
+	});
+
+	Ext.getCmp('select_excel_sheet_riskitem_window').add(select_excel_sheet_riskitem);
+	Ext.getCmp('select_excel_sheet_riskitem_window').show();
+}
+
+function riskitem_uploadPanel_submit(params)
+{
+	if(Ext.getCmp("riskitem_uploadPanel").getForm().isValid()){
+		top.myUpdateProgress(1,'Data Loadding...');
+
+		var URL = "./index.php/Import/plugin/riskanalysis/import_riskitem";
+
+		Ext.getCmp("riskitem_uploadPanel").mask(Otm.com_msg_processing_data);
+
+		Ext.getCmp("riskitem_uploadPanel").getForm().submit({
+			url: URL,
+			method:'POST',
+			params: params,
+			success: function(form, action){
+				top.myUpdateProgress(100,'End');
+
+				var obj = Ext.decode(action.response.responseText);
+				if(obj.sheet_count && obj.sheet_count>1)
+				{
+					Ext.getCmp("riskitem_uploadPanel").unmask();
+
+					select_excel_sheet_riskitem(obj.sheet_names,params);
+					return;
+				}
+
+				Ext.getCmp("riskanalysis_riskitemGrid").getStore().reload();
+
+				Ext.getCmp("riskitem_uploadPanel").unmask();
+				Ext.getCmp("riskitem_import_window").hide();
+			},
+			failure: function(form, action){
+				var obj = Ext.decode(action.response.responseText);
+
+				var msg = Ext.decode(obj.msg);
+				if(msg.over){
+					Ext.Msg.alert('OTM',msg.over);
+
+					top.myUpdateProgress(100,'End');
+					Ext.getCmp("riskitem_uploadPanel").unmask();
+					return;
+				}else if(msg.duplicate_id){
+					Ext.Msg.confirm('OTM',Otm.com_msg_duplicate_id,function(bt){
+						if(bt=='yes'){
+
+							var params = {
+								project_seq	: project_seq,
+								import_check_id : true,
+								update : true
+							};
+
+							riskitem_uploadPanel_submit(params);
+
+						}else{
+							Ext.getCmp("riskitem_import_window").hide();
+							return;
+						}
+					})
+
+				}else{
+					Ext.Msg.alert('OTM',msg.msg);
+				}
+
+				top.myUpdateProgress(100,'End');
+				Ext.getCmp("riskitem_uploadPanel").unmask();
+			}
+		});
+	}
+}
+
 var riskitem_customform_store = Ext.create('Ext.data.Store', {
 	fields:['pc_seq','pc_name','pc_is_required','pc_formtype','pc_default_value','pc_content','pc_is_use'],
 	proxy: {
@@ -35,6 +288,8 @@ var riskitem_customform_store = Ext.create('Ext.data.Store', {
 function form_reset()
 {
 	Ext.getCmp('riskanalysis_riskitem_form').removeAll();
+	riskanalysis_riskitem_requirement_unlink_store.removeAll();
+	riskanalysis_riskitem_requirement_link_store.removeAll();
 
 	var riskitem_seqForm = {
 		id: 'riskitem_seqForm',
@@ -168,6 +423,7 @@ function form_reset()
 								items		: [{
 									xtype		: 'displayfield',
 									fieldLabel	: 'seq',
+									hidden		: true,
 									value		: riskitem_info.data.ri_seq
 								},{
 									xtype		: 'displayfield',
@@ -196,7 +452,7 @@ function form_reset()
 							selItem.data.riskitem_descriptionForm = riskitem_info.data.ri_description;
 
 							var df_customform = riskitem_info.data.df_customform;
-							_setCustomform_userdata(customform_seq,df_customform);
+							//_setCustomform_userdata(customform_seq,df_customform);
 
 							riskitem_writeForm.loadRecord(selItem);
 						}
@@ -254,13 +510,14 @@ function form_reset()
 		listeners:{
 			scope:this,
 			select: function(smObj, record, rowIndex){
+				//console.log('select');
 				var riskanalysis_riskitem_east_panel = Ext.getCmp('riskanalysis_riskitem_east_panel');
 
 				riskanalysis_riskitem_east_panel.setTitle(Otm.com_view);
-				if(riskanalysis_riskitem_east_panel.collapsed==false){
-				}else{
-					riskanalysis_riskitem_east_panel.expand();
-				}
+				//if(riskanalysis_riskitem_east_panel.collapsed==false){
+				//}else{
+				//	riskanalysis_riskitem_east_panel.expand();
+				//}
 
 				var obj ={
 					target : 'riskanalysis_riskitem_form',
@@ -271,6 +528,15 @@ function form_reset()
 				riskitem_view_panel(obj);
 				
 				return;
+			},
+			deselect: function(smObj, record, rowIndex){
+				//console.log('deselect');
+				//Ext.getCmp('riskanalysis_riskitem_east_panel').collapse();
+				//var obj ={
+				//	target : 'riskanalysis_riskitem_form'
+				//};
+
+				//riskitem_view_panel(obj);
 			}
 		},
 		tbar	: [{
@@ -344,10 +610,15 @@ function form_reset()
 									if(result.responseText=="1"){
 										riskanalysis_riskitem_store.reload();
 
-										var riskanalysis_riskitem_east_panel = Ext.getCmp('riskanalysis_riskitem_east_panel');
-										riskanalysis_riskitem_east_panel.collapse();
-										form_reset();
+										//var riskanalysis_riskitem_east_panel = Ext.getCmp('riskanalysis_riskitem_east_panel');
+										//riskanalysis_riskitem_east_panel.collapse();
+										//form_reset();
 										//riskanalysis_riskitem_east_panel.removeAll();
+										Ext.getCmp('riskanalysis_riskitem_form').removeAll();
+										riskanalysis_riskitem_requirement_unlink_store.removeAll();
+										riskanalysis_riskitem_requirement_link_store.removeAll();
+
+										//Ext.getCmp("riskanalysis_riskitemGrid").getSelectionModel().select(0);
 									}else{
 										Ext.Msg.alert("OTM",result.responseText);
 									}
@@ -365,34 +636,41 @@ function form_reset()
 					Ext.Msg.alert("OTM",Otm.com_msg_NotSelectData);
 				}
 				}
-			},'-',{
+			},
+				
+			{
 				text	: Otm.com_up,
 				iconCls	: 'ico-up',
+				hidden	: true,
 				disabled: true,
 				handler	: function(btn){
 
 				}
-			},'-',{
+			},{
 				text	: Otm.com_down,
 				iconCls	: 'ico-down',
+				hidden	: true,
 				disabled: true,
 				handler	: function(btn){
+				}
+			},
+				
+			'-',{
+				xtype	: 'button',
+				text	: Otm.com_export,
+				iconCls	: 'ico-export',
+				//disabled: true,
+				handler	: function (btn){
+					//export_data('otm/riskitem_list_export');
+					export_data('plugin/riskanalysis/export_riskitem','project_seq='+project_seq);
 				}
 			},'-',{
 				xtype	: 'button',
 				text	: Otm.com_import,
 				iconCls	: 'ico-import',
-				disabled: true,
+				//disabled: true,
 				handler	: function (btn){
-
-				}
-			},'-',{
-				xtype	: 'button',
-				text	: Otm.com_export,
-				iconCls	: 'ico-export',
-				disabled: true,
-				handler	: function (btn){
-					//export_data('otm/riskitem_list_export');
+					viewImportWin_riskitem();
 				}
 			}]
 	};
@@ -415,6 +693,12 @@ function form_reset()
 		items	: []
 	};
 
+
+	/*
+	*	Requirement mapping tab panel 
+	*	- unlink grid panel
+	*	- linked grid panel
+	*/
 	//요구사항 연결 목록
 	var riskanalysis_riskitem_requirement_unlink_store = Ext.create('Ext.data.Store', {
 		fields:['req_seq', 'req_subject'],
@@ -469,38 +753,27 @@ function form_reset()
 		columns	: [
 			{header: '요구사항명',		dataIndex: 'req_subject',		flex: 1}
 			//,{header: 'ID',		dataIndex: 'oreq_id',	flex: 1, width:50, minWidth:100}
-		]
-	};
-
-	var riskanalysis_riskitem_requirement_link_grid =  {
-		region	: 'east',
-		layout	: 'fit',
-		xtype	: 'gridpanel',
-		id		: 'riskanalysis_riskitem_requirement_link_grid',
-		title	: '연결된 요구사항',
-		flex		: 1,
-		store	: riskanalysis_riskitem_requirement_link_store,
-		columns	: [
-			{header: '요구사항명',		dataIndex: 'req_subject',		flex: 1}
-			//,{header: 'ID',		dataIndex: 'oreq_id',	flex: 1, width:50, minWidth:100}
 		],
-		lbar	: [{
+		tbar	: [{
 			xtype	: 'button',
-			iconCls	: 'arrow_right',
-			tooltip	: '선택된 요구사항이 선택된 리스크아이템과 연결됩니다.',
-			handler	: function(){
-				alert('link');
+			//iconCls	: 'arrow_right',
+			iconCls	: 'ico-link',
+			text	: '연결',
+			tooltip	: '리스크아이템과 연결합니다.',
+			handler	: function(){				
 				var ri_seq = 0;
 
 				var Records = Ext.getCmp("riskanalysis_riskitemGrid").getSelectionModel().selected.items;
 				if(Records.length > 1){
 					return;
 				}else{
+					//console.log(Records);
 					ri_seq = Records[0].data['ri_seq'];
 				}
 
 				var params = {
-					ri_seq: ri_seq
+					ri_seq	: ri_seq,
+					type	: 'link'
 				};
 				var req_list = Array();
 				
@@ -522,9 +795,96 @@ function form_reset()
 					success: function ( result, request ) {
 						//if(result.responseText){
 						//}
-						riskanalysis_riskitem_requirement_unlink_store.load({params:{'ri_seq':ri_seq}});
-						riskanalysis_riskitem_requirement_link_store.load({params:{'ri_seq':ri_seq}});
+						//riskanalysis_riskitem_requirement_unlink_store.load({params:{'ri_seq':ri_seq}});
+						//riskanalysis_riskitem_requirement_link_store.load({params:{'ri_seq':ri_seq}});
+						riskanalysis_riskitem_store.reload({
+							callback:function(){
 
+								if(!ri_seq){
+									//Ext.getCmp("riskanalysis_riskitemGrid").getSelectionModel().select(0);
+									Ext.getCmp('riskanalysis_riskitem_east_panel').collapse();
+								}else{
+									for(var i=0;i<riskanalysis_riskitem_store.data.length;i++){
+										//console.log('callback',i, riskanalysis_riskitem_store.data.items[i].data.ri_seq , ri_seq);
+										if(riskanalysis_riskitem_store.data.items[i].data.ri_seq == ri_seq){
+											ri_seq = 0;
+											Ext.getCmp("riskanalysis_riskitemGrid").getSelectionModel().select(i);
+										}
+									}
+								}
+							}
+							
+						});
+					},
+					failure: function ( result, request ){						
+					}
+				});
+			}
+		}]
+	};
+
+	var riskanalysis_riskitem_requirement_link_grid =  {
+		region	: 'east',
+		layout	: 'fit',
+		xtype	: 'gridpanel',
+		id		: 'riskanalysis_riskitem_requirement_link_grid',
+		title	: '연결된 요구사항',
+		flex	: 1,
+		store	: riskanalysis_riskitem_requirement_link_store,
+		columns	: [
+			{header: '요구사항명',		dataIndex: 'req_subject',		flex: 1}
+			//,{header: 'ID',		dataIndex: 'oreq_id',	flex: 1, width:50, minWidth:100}
+		],
+		tbar	: [{
+			xtype	: 'button',
+			iconCls	: 'ico-unlink',
+			text	: '연결 해제',
+			tooltip	: '리스크아이템과 연결을 해제합니다.',
+			handler	: function(){
+				var ri_seq = 0;
+
+				var Records = Ext.getCmp("riskanalysis_riskitemGrid").getSelectionModel().selected.items;
+				if(Records.length > 1){
+					return;
+				}else{
+					ri_seq = Records[0].data['ri_seq'];
+				}
+
+				var params = {
+					ri_seq	: ri_seq,
+					type	: 'unlink'
+				};
+				var req_list = Array();
+				
+				var Records = Ext.getCmp('riskanalysis_riskitem_requirement_link_grid').getSelectionModel().selected.items;
+				if(Records.length >= 1){
+					for(var i=0; i<Records.length; i++){
+						req_list.push(Records[i].data['otm_requirement_req_seq']);
+					}
+					params.req_list = Ext.encode(req_list);
+				}else{
+					Ext.Msg.alert('OTM',Otm.com_msg_NotSelectData);
+					return;
+				}
+
+				Ext.Ajax.request({
+					url : './index.php/Plugin_view/riskanalysis/riskitem_requirement_link',
+					params : params,
+					method: 'POST',
+					success: function ( result, request ) {
+						//if(result.responseText){
+						//}
+						//riskanalysis_riskitem_requirement_unlink_store.load({params:{'ri_seq':ri_seq}});
+						//riskanalysis_riskitem_requirement_link_store.load({params:{'ri_seq':ri_seq}});
+						riskanalysis_riskitem_store.reload({
+							callback:function(){
+								for(var i=0;i<riskanalysis_riskitem_store.data.length;i++){
+									if(riskanalysis_riskitem_store.data.items[i].data.ri_seq == ri_seq){
+										Ext.getCmp("riskanalysis_riskitemGrid").getSelectionModel().select(i);
+									}
+								}
+							}
+						});
 					},
 					failure: function ( result, request ){						
 					}
@@ -545,20 +905,162 @@ function form_reset()
 			] 				
 		}]
 	};
+	/*
+	*	Requirement mapping tab panel
+	*	END
+	*/
+
+
+	/*
+	*	Testcase mapping tab panel 
+	*	- testcase backlog tree panel
+	*/
+	function riskanalysis_testcase_link(type)
+	{
+		var ri_seq = 0;
+
+		var select_risk = Ext.getCmp("riskanalysis_riskitemGrid").getSelectionModel().selected.items;
+
+		if(select_risk.length == 1){
+			ri_seq = select_risk[0].data['ri_seq'];
+
+			var params = {
+				type			: type,
+				pr_seq			: project_seq,
+				ri_seq			: select_risk[0].data['ri_seq']
+			};
+		}else{
+			return;
+		}
+
+		var URL = './index.php/Plugin_view/riskanalysis/riskitem_testcase_link';
+		var select_tc = Ext.getCmp('riskanalysis_riskitem_tc_grid').getSelectionModel().selected.items[0];
+
+		if(type == 'add_link'){				
+			if(select_tc){
+				params.pid = select_tc.data.id;
+				params.tc_seq = (select_tc.data.tc_seq)?select_tc.data.tc_seq:0;
+			}
+
+			var action_type = 'add';
+
+		}else if(type == 'link'){
+			if(select_tc){
+				if(select_tc.data.id == 'root'){
+					Ext.Msg.alert("OTM",'Root에는 연결할 수 없습니다.');
+					return;
+				}else{
+					params.pid = select_tc.data.id;
+					params.tc_seq = select_tc.data.tc_seq;
+				}
+			}else{			
+				Ext.Msg.alert("OTM",Otm.com_msg_NotSelectData);
+				return;
+			}
+
+			var action_type = 'update';
+			
+			if(select_tc.data.link_seq != ''){
+				if(select_risk[0].data['ri_seq'] ==	select_tc.data.link_seq){
+					Ext.Msg.alert('OTM','연결된 테스트 케이스 입니다.');
+				}else{
+					Ext.Msg.alert('OTM','다른 테스트 케이스와 연결되어있습니다.');
+				}
+				return;
+			}
+		}else if(type == 'unlink'){
+			if(select_tc){
+				if(select_tc.data.id == 'root'){
+					return;
+				}else{
+					params.pid = select_tc.data.id;
+					params.tc_seq = select_tc.data.tc_seq;
+				}
+			}else{			
+				Ext.Msg.alert("OTM",Otm.com_msg_NotSelectData);
+				return;
+			}
+
+			var action_type = 'update';
+
+			if(select_tc.data.link_seq != ''){
+				if(select_risk[0].data['ri_seq'] ==	select_tc.data.link_seq){
+				}else{
+					Ext.Msg.alert('OTM','다른 테스트 케이스와 연결되어있습니다.');
+					return;
+				}
+			}else{
+				Ext.Msg.alert('OTM','연결된 테스트 케이스가 없습니다.');
+				return;
+			}
+		}
+
+
+		//console.log(URL, params);
+		
+		//riskanalysis_riskitem_tc_store.load();
+		//Ext.getCmp('riskanalysis_riskitem_tc_grid').getStore().load({params:{node:'root'}});
+		//Ext.getCmp('riskanalysis_riskitem_tc_grid').getRootNode().reload();
+
+		Ext.Ajax.request({
+			url : URL,
+			params : params,
+			method: 'POST',
+			success: function ( result, request ) {
+				//console.log(result, request);
+				//return;
+				//if(result.responseText){
+				var obj =  Ext.decode(result.responseText);
+				if(obj.data.msg && obj.data.msg == 'over_num'){
+					Ext.Msg.alert('OTM',Otm.id_rule.over_id_number_msg);
+					return;
+				}else if(obj.data.msg){
+					Ext.Msg.alert('OTM',obj.data.msg);
+					return;
+				}
+				
+				/*
+				var node = Ext.decode(obj.data);
+				node.cmd = action_type;
+				node.target_grid = "riskanalysis_riskitem_tc_grid";
+				
+				//console.log(node);
+
+				NodeReload(node);
+				*/
+
+				riskanalysis_riskitem_store.reload({
+					callback:function(){
+						for(var i=0;i<riskanalysis_riskitem_store.data.length;i++){
+							if(riskanalysis_riskitem_store.data.items[i].data.ri_seq == ri_seq){
+								Ext.getCmp("riskanalysis_riskitemGrid").getSelectionModel().select(i);
+							}
+						}
+					}
+				});
+				return;
+			},
+			failure: function ( result, request ){						
+			}
+		});
+	
+	}
 
 	var riskanalysis_riskitem_tc_store = Ext.create('Ext.data.TreeStore', {
-		root: {
+		/*root: {
 			text: 'Root',
+			//id: 'tc_0',
 			//expanded: true,
 			expandable: false,
 			children: []
-		},
+		},*/
 		proxy: {
 			type: 'ajax',
-			url:'./index.php/Plugin_view/testcase/testcase_tree_list',
+			//url:'./index.php/Plugin_view/testcase/testcase_tree_list',
+			url	: './index.php/Plugin_view/riskanalysis/riskanalysis_testcase_list',
 			extraParams: {
-				project_seq : project_seq,
-				tcplan		: 0
+				pr_seq : project_seq,
+				ri_seq : 0
 			},
 			reader: {
 				type: 'json',
@@ -569,53 +1071,204 @@ function form_reset()
 		folderSort: true
 	});
 
-	var riskanalysis_riskitem_tc_grid =  {
-		//region	: 'center',
-		layout	: 'fit',
-		xtype	: 'gridpanel',
+	riskanalysis_riskitem_tc_store.addListener('beforeload',function(thisStore){
+		/*
+		console.log('brforload');
+		console.log(thisStore);
+		console.log(thisStore.lastOptions);
+		console.log(thisStore.lastOptions.params);
+		thisStore.lastOptions.params.ri_seq = 5;
+		thisStore.proxy.extraParams.ri_seq = 5;
+		*/
+
+		var tabPanel = Ext.getCmp('riskanalysis_tab_panel');
+		if(tabPanel.activeTab.id == 'riskanalysis_riskitem_tc_grid')
+		{
+			//console.log('111 : ',tabPanel);
+
+			//riskanalysis_riskitem_tc_store.getRootNode().removeAll();
+			/*
+			riskanalysis_riskitem_tc_store.setRootNode({
+			  id: 'tc_0',
+			  text: 'root'
+			  // other configs in root
+			});
+			*/
+
+			//riskanalysis_riskitem_tc_store.reload();//{params:{'ri_seq':obj.ri_seq}});
+			//riskanalysis_riskitem_tc_grid.getRootNode().load();
+		}else{
+			//console.log(tabPanel);
+			return false;
+		}
+
+		var select_risk = Ext.getCmp("riskanalysis_riskitemGrid").getSelectionModel().selected.items;
+		if(select_risk.length == 1){			
+			thisStore.lastOptions.params.ri_seq = select_risk[0].data['ri_seq'];
+			thisStore.proxy.extraParams.ri_seq = select_risk[0].data['ri_seq'];
+			return true;
+		}else{
+			return false;
+		}
+	});
+
+
+	var riskanalysis_riskitem_tc_grid = Ext.create('Ext.tree.Panel', {
+		//layout	: 'fit',
 		title	: '테스트 케이스',
-		split		: true,
-		collapsible	: true,
-		collapsed	: false,
-		flex		: 1,
-		store	: riskanalysis_riskitem_tc_store,
-		columns	: [
-			{header: '테스트케이스명',		dataIndex: 'oreq_name',		flex: 1,	minWidth:200},
-			{header: 'ID',		dataIndex: 'oreq_id',	flex: 1, width:50, minWidth:100}
-		],
-		tbar	: [{
-			xtype	: 'button',
-			text	: Otm.com_add,
-			iconCls	:'ico-add',
-			handler	: function (btn){
-				Ext.create('Ext.window.Window', {
-					title	: '테스트 케이스 추가',
-					height	: 600,
-					width	: 400,
-					layout	: 'form',
-					modal	: true,
-					constrainHeader: true,
-					items	: [{
-						xtype	: 'textfield'
-					}],
-					buttons:[{
-						text:Otm.com_save,
-						//formBind: true,
-						iconCls:'ico-save',
-						handler:function(btn){
-							//this.close();
+		id: 'riskanalysis_riskitem_tc_grid',
+		width: 500,
+		height: 300,
+		enableDD: true,
+		useArrows: true,
+		rootVisible: true,
+		store: riskanalysis_riskitem_tc_store,
+		root: {
+			//nodeType: 'async',
+            text: 'Root',
+			//id:'tc_0',
+            draggable: false
+        },
+		multiSelect: true,
+		singleExpand: false,
+		animate: false,		
+		viewConfig: {
+			plugins : {
+				ptype: 'treeviewdragdrop',
+				ddGroup: 'dd_testcase'
+			},
+			listeners: {
+				beforedrop: function (node, data) {
+				},
+				drop: function (node, data, dropRec, dropPosition) {
+					/*
+					var list = Array();
+					var select_node = data.records;
+					var url = './index.php/Plugin_view/testcase/move_testcase';
+
+					if(temp_tcplan[0] == 'backlog'){
+						for(var i=0; i<select_node.length; i++){
+							list.push(select_node[i].data['id']);
 						}
-					}]
-				}).show();
+					}else{
+						url = './index.php/Plugin_view/testcase/move_testcase_target';
+						for(var i=0; i<select_node.length; i++){
+							list.push({
+								'tl_seq':select_node[i].data['tl_seq'],
+								'tl_inp_pid':select_node[i].data['tl_inp_pid'],
+							});
+						}
+					}
+
+					var target_id = dropRec.data.id;
+					var target_tl_seq = dropRec.data.tl_seq;
+					var target_type = dropRec.data.type;
+					var target_tc_seq = dropRec.data.tc_seq;
+
+					var params = {
+						pr_seq	: project_seq,
+						tc_plan : temp_tcplan[1],
+						target_tc_seq : target_tc_seq,
+						target_id : target_id,
+						select_id : Ext.encode(list),
+						position : dropPosition,
+						target_type : target_type
+					};
+
+					mask.start();
+					Ext.Ajax.request({
+						url : url,
+						params : params,
+						method: 'POST',
+						success: function ( result, request ) {
+							if(result.responseText){
+								Ext.getCmp('testcase_east_panel').removeAll();
+								mask.stop();
+							}
+						},
+						failure: function ( result, request ){
+							mask.stop();
+						}
+					});
+					*/
+				}
+			}
+		},
+		columns: [{
+				xtype: 'treecolumn',
+				text: Otm.com_subject, dataIndex: 'text',
+				minWidth:150, flex: 1, sortable: true
+			},{
+				text: Otm.com_id, dataIndex: 'out_id',
+				width:80, sortable: true, align:'center'
+			},{
+				text: '연결 정보<br>(<img src="resource/css/icon/bullet_green.gif" />,<img src="resource/css/icon/bullet_black.gif" />)', dataIndex: 'link_seq',
+				width:70, sortable: true, align:'center',
+				tooltip	: '녹색 : 선택된 리스크 아이템과 연결 <br>검정 : 다른 리스크 아이템과 연결',
+				renderer:function(val){
+					if(val){
+
+						var select_risk = Ext.getCmp("riskanalysis_riskitemGrid").getSelectionModel().selected.items;
+						if(select_risk.length == 1){			
+							if(select_risk[0].data['ri_seq'] == val){
+								var img = '<img src="resource/css/icon/bullet_green.gif" />';
+								return img;
+								return '*'+val;
+							}else{
+								var img = '<img src="resource/css/icon/bullet_black.gif" />';
+								return img;
+								return val;
+							}
+						}else{
+							
+						}
+						
+					}
+				}
+			},{
+				hidden:true,
+				text: 'disabled', dataIndex: 'disabled',
+				width:100, sortable: true, align:'center'
+			}],
+		tbar:[{
+			xtype	: 'button',
+			iconCls	: 'ico-add',
+			text	: '등록',
+			tooltip	: '리스크아이템을 스윗으로 추가합니다.',
+			handler	: function(){
+				//alert('등록 후 연결');
+				riskanalysis_testcase_link('add_link');
+			}
+		},'-',{
+			xtype	: 'button',
+			iconCls	: 'ico-link',
+			text	: '연결',
+			tooltip	: '리스크아이템과 스윗을 연결합니다.',
+			handler	: function(){
+				//alert('연결');
+				riskanalysis_testcase_link('link');
+			}
+		},'-',{
+			xtype	: 'button',
+			iconCls	: 'ico-unlink',
+			text	: '연결 해제',
+			tooltip	: '리스크아이템과 스윗 연결을 해제합니다.',
+			handler	: function(){
+				//alert('연결');
+				riskanalysis_testcase_link('unlink');
 			}
 		}]
-	};
+	});
+	//riskanalysis_riskitem_tc_grid.getRootNode().expand();
+	/*
+	*	Testcase mapping tab panel 
+	*	END
+	*/
 
-
-	var tab_panel = {//Ext.create('Ext.tab.Panel', {
+	var tab_panel = {
 		region		: 'south',
-		//layout		: 'border',
 		xtype		: 'tabpanel',
+		id			: 'riskanalysis_tab_panel',
 		//split		: true,
 		//collapsible	: true,
 		//collapsed	: false,
@@ -631,12 +1284,23 @@ function form_reset()
 		listeners: {
 			tabchange : function(tabPanel, newCard, oldCard, eOpts ) {
 				//tabPanel.activeTab.id
+				//console.log(tabPanel, newCard, oldCard, eOpts);
+				if(tabPanel.activeTab.id == 'riskanalysis_riskitem_tc_grid')
+				{
+					riskanalysis_riskitem_tc_grid.getRootNode().expand();
+					//var select_risk = Ext.getCmp("riskanalysis_riskitemGrid").getSelectionModel().selected.items;
+					//if(select_risk.length == 1){			
+						//thisStore.lastOptions.params.ri_seq = select_risk[0].data['ri_seq'];
+						//thisStore.proxy.extraParams.ri_seq = select_risk[0].data['ri_seq'];
+
+						//riskanalysis_riskitem_tc_store.reload({params:{'ri_seq':select_risk[0].data['ri_seq']}});
+					//}
+				}
 			}
 		}
-	//});
+		
 	};
 
-	//---------------------------
 	var riskanalysis_riskitem_east_panel = {
 		region		: 'east',
 		layout		: 'border',
@@ -646,7 +1310,6 @@ function form_reset()
 		collapsed	: true,
 		flex		: 1,
 		animation	: false,
-		//autoScroll	: true,
 		minWidth	: 420,
 		maxWidth	: 600,
 		items		: [riskanalysis_riskitem_form, tab_panel]

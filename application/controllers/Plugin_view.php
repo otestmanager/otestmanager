@@ -38,6 +38,7 @@ class Plugin_view extends Controller
 		$data['mb_email'] = $this->session->userdata('mb_email');
 		$data['mb_name'] = $this->session->userdata('mb_name');
 		$data['mb_is_admin'] = $this->session->userdata('mb_is_admin');
+		$data['mb_lang'] = $this->session->userdata('mb_lang');
 
 		if($this->input->post('project_seq', TRUE)){
 			$data['project_seq'] = $this->input->post('project_seq', TRUE);
@@ -57,16 +58,19 @@ class Plugin_view extends Controller
 			$data['module_directory'] = $this->seg_exp[1];
 			$data['controller'] = $this->seg_exp[1];
 
-			if(@$this->seg_exp[2]) {
+			$error_rep = error_reporting();
+			error_reporting(0);			
+			if($this->seg_exp[2]) {
 				$data['function'] = $this->seg_exp[2];
 			}
 			else{
 				$data['function'] = '';
 			}
 
-			if(@$this->seg_exp[3]) {
+			if($this->seg_exp[3]) {
 				$data['param'] = $this->seg_exp[3];
 			}
+			error_reporting($error_rep);
 
 			$data['skin'] = 'default';
 

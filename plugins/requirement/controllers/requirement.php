@@ -83,11 +83,17 @@ class Requirement extends Controller {
 	{
 
 		$data = array(
-			'pr_seq' => $this->input->post('pr_seq', TRUE)
+			'pr_seq' => $this->input->post('pr_seq', TRUE),
+			'limit' => $this->input->post('limit',true),
+			'page' => $this->input->post('page',true),
+			'start' => $this->input->post('start',true)
 		);
+
+		print $this->requirement_m->requirement_list($data);
+		exit;
 		
-		$requirement_list = $this->requirement_m->requirement_list($data);
-		return $this->return_json($requirement_list);
+		//$requirement_list = $this->requirement_m->requirement_list($data);
+		//return $this->return_json($requirement_list);
 
 
 		//return '{success:true,totalCount:3, data:[{"req_subject":"aaa","req_id":"111","req_status":"aaa","req_riskarea":"aaa","req_creator":"aaa","req_date":"2016-08-01"},{"req_subject":"bbb","req_id":"222","req_status":"bbb","req_riskarea":"bbb","req_creator":"bbb","req_date":"2016-08-01"},{"req_subject":"ccc","req_id":"333","req_status":"ccc","req_riskarea":"ccc","req_creator":"ccc","req_date":"2016-08-01"}]}';
@@ -261,6 +267,25 @@ class Requirement extends Controller {
 		
 		$info_data = $this->requirement_m->get_requirement_info($data);
 		return $this->return_json($info_data);
+	}
+
+
+	/**
+	* Function export
+	*
+	* @return string
+	*/
+	function export(){
+		$data = array(
+			'project_seq' => $this->input->post_get('project_seq',true),
+			'limit' => $this->input->post_get('limit',true),
+			'page' => $this->input->post_get('page',true),
+			'start' => $this->input->post_get('start',true)
+		);
+
+		$list = $this->requirement_m->export($data);
+		return $list;
+		exit;
 	}
 	
 }

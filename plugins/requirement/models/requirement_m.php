@@ -33,12 +33,20 @@ class Requirement_m extends CI_Model {
 	* @return integer
 	*/
 	function is_custom_value($req_seq,$form_seq){
+		/*
 		$str_sql = "select count(*) as cnt from otm_requirement_custom_value
 					where
 						otm_requirement_req_seq='$req_seq' and
 						otm_project_customform_pc_seq='$form_seq'
 					";
 		$query = $this->db->query($str_sql);
+		*/
+
+		$this->db->select('count(*) as cnt');
+		$this->db->where('otm_requirement_req_seq',$req_seq);
+		$this->db->where('otm_project_customform_pc_seq',$form_seq);		
+		$query = $this->db->get('otm_requirement_custom_value');
+
 		$tmp_arr="";
 		foreach ($query->result() as $temp_row)
 		{
@@ -115,19 +123,80 @@ class Requirement_m extends CI_Model {
 	*/
 	function requirement_list($data)
 	{
+		$pr_seq	= $data['pr_seq'];
+		$start = $data['start'];
+		$limit = $data['limit'];
+		if($start != null && $limit != null){
+			$limitSql = " limit $limit OFFSET $start ";
+		}else{
+			$limitSql = "";
+		}
+
+		$custom_arr = array();
+		$this->db->select('pc_seq,otm_project_pr_seq,pc_name,b.otm_requirement_req_seq,b.reqcv_custom_value as cv_custom_value');
+		$this->db->from('otm_project_customform as a');
+		$this->db->where('otm_project_pr_seq',$pr_seq);
+		$this->db->where('pc_category','ID_REQ');
+		$this->db->where('pc_is_use','Y');
+		$this->db->join('otm_requirement_custom_value as b','a.pc_seq=b.otm_project_customform_pc_seq', 'left');
+		$query = $this->db->get();
+		foreach ($query->result() as $row)
+		{
+			$custom_arr[$row->otm_requirement_req_seq]["_".$row->pc_seq] = $row;
+		}
+
+		$this->db->select('pc_seq,pc_name,pc_formtype');
+		$this->db->from('otm_project_customform');
+		$this->db->where('otm_project_pr_seq',$pr_seq);
+		$this->db->where('pc_category','ID_REQ');
+		$this->db->where('pc_is_use','Y');
+		$this->db->order_by('ABS(pc_1)', 'asc');
+
+		$query = $this->db->get();
+		$str_select = "";
+		$cnt = 0;
+
+		$custom_form_array = array();
+		$column_arr = array();
+		foreach ($query->result() as $row)
+		{
+			$cnt++;
+			array_push($column_arr,"_".$row->pc_seq);
+			$custom_form_array[] = $row;
+		}
+
+
 		$member_name = $this->get_member_name();
 		$return_array = array();
 
+		$this->db->start_cache();
+		$this->db->from('otm_requirement');
 		$this->db->where('otm_project_pr_seq', $data['pr_seq']);
 		$this->db->order_by('req_seq desc');
+		
+		$this->db->stop_cache();
+		$cnt_result = $this->db->count_all_results();
+
+	
+		if($limitSql != ""){
+			$this->db->limit($limit,$start);
+		}
+
 		$query = $this->db->get('otm_requirement');
 		foreach ($query->result() as $temp_row)
 		{
+
+			for($k=0;$k<sizeof($column_arr);$k++){
+				$temp_row->$column_arr[$k] = $custom_arr[$temp_row->req_seq][$column_arr[$k]]->cv_custom_value;
+			}
+
 			$temp_row->req_assign = $member_name[$temp_row->req_assign];
 			$temp_row->writer = $member_name[$temp_row->writer];
 			$return_array[] = $temp_row;
 		}
-		return $return_array;
+
+		return "{success:true,totalCount: ".$cnt_result.", data:".json_encode($return_array)."}";
+		//return $return_array;
 	}
 
 
@@ -147,6 +216,7 @@ class Requirement_m extends CI_Model {
 		$req_priority = $data['req_priority'];
 		$req_difficulty = $data['req_difficulty'];
 		$req_accept = $data['req_accept'];
+		$req_assign = $data['req_assign'];
 		$custom_form = $data['custom_form'];
 
 		$date=date("Y-m-d H:i:s");
@@ -164,6 +234,10 @@ class Requirement_m extends CI_Model {
 
 		$this->db->set('last_writer',		$writer);
 		$this->db->set('last_update',		$date);
+
+		if(isset($req_assign)){
+			$this->db->set('req_assign',		$req_assign);
+		}
 
 		$this->db->insert('otm_requirement');
 		$req_seq = $this->db->insert_id();
@@ -524,6 +598,331 @@ class Requirement_m extends CI_Model {
 		}
 
 		return $history;
+	}
+
+
+	/**
+	* Function export
+	*
+	* @return array
+	*/
+	function export($data)
+	{
+		$return_array = array();
+
+		if(isset($data['function'])){
+		}else{
+			
+		}
+		
+		//$data['pr_seq'] = $data['project_seq'];
+		//$return_array = $this->requirement_list($data);
+		
+		$pr_seq = $data['project_seq'];
+
+		//Member Info
+		$member_name = $this->get_member_name();
+
+
+		/**
+			Get UserForm Data
+		*/
+		$p_customform = array();
+		$custom_arr = array();
+
+		$this->db->select('pc_seq,otm_project_pr_seq,pc_name,b.otm_requirement_req_seq,b.reqcv_custom_value as cv_custom_value');
+		$this->db->from('otm_project_customform as a');
+		$this->db->where('otm_project_pr_seq',$pr_seq);
+		$this->db->where('pc_category','ID_REQ');
+		$this->db->where('pc_is_use','Y');
+		$this->db->join('otm_requirement_custom_value as b','a.pc_seq=b.otm_project_customform_pc_seq', 'left');
+		$query = $this->db->get();
+		foreach ($query->result() as $row)
+		{
+			$custom_arr[$row->otm_requirement_req_seq][$row->pc_seq] = $row;
+		}
+
+		$this->db->select('pc_seq,pc_name,pc_formtype');
+		$this->db->from('otm_project_customform');
+		$this->db->where('otm_project_pr_seq',$pr_seq);
+		$this->db->where('pc_category','ID_REQ');
+		$this->db->where('pc_is_use','Y');
+		$this->db->order_by('ABS(pc_1)', 'asc');
+		$this->db->order_by('pc_seq', 'asc');
+
+		$query = $this->db->get();
+		$custom_form_array = array();
+		$column_arr = array();
+		foreach ($query->result() as $row)
+		{
+			array_push($column_arr,$row->pc_seq);
+			$custom_form_array[] = $row;
+		}
+		/**
+			End : Get UserForm Data
+		*/
+
+		/**
+			Get Attach File Data
+		*/
+		$attach_files = array();
+		$this->db->select('otm_project_pr_seq as pr_seq, otm_category as category, of_no,target_seq,of_source,of_file,of_width,of_height');
+		$this->db->from('otm_file');
+		$this->db->where('otm_project_pr_seq',$pr_seq);
+		$this->db->where('otm_category','ID_REQ');
+		$files_query = $this->db->get();
+		foreach ($files_query->result() as $row)
+		{
+			$row->path = '/uploads/files/'.$pr_seq.'/'.$row->of_file;
+			$attach_files[$row->target_seq][$row->of_no] = $row;
+		}
+		/**
+			End : Get Image File Data
+		*/
+
+
+		$this->db->where('otm_project_pr_seq', $pr_seq);
+		$this->db->order_by('req_seq desc');
+		$query = $this->db->get('otm_requirement');
+		foreach ($query->result() as $temp_row)
+		{
+			//req_seq, otm_project_pr_seq, req_subject, req_description, req_priority, req_difficulty, req_accept, req_assign, writer, regdate, last_writer, last_update
+
+			$export_row['Subject'] = $temp_row->req_subject;
+			$export_row['Priority'] = $temp_row->req_priority;
+			$export_row['Difficulty'] = $temp_row->req_difficulty;
+			$export_row['Accept'] = $temp_row->req_accept;
+			$export_row['Description'] = $temp_row->req_description;
+			$export_row['Aassign'] = $member_name[$temp_row->req_assign];
+
+			for($i=0; $i<count($column_arr); $i++){
+				$export_row[$custom_form_array[$i]->pc_name."(*)"] = $custom_arr[$temp_row->req_seq][$column_arr[$i]]->cv_custom_value;
+			}			
+
+			$export_row['Writer'] = $member_name[$temp_row->writer];
+			$export_row['Regdate'] = $temp_row->regdate;
+
+			
+			if($attach_files[$temp_row->req_seq]){
+				$temp_row->req_file = $attach_files[$temp_row->req_seq];
+			}else{
+				$temp_row->req_file = array();
+			}
+			$export_row['otm_export_images'] = $temp_row->req_file;
+
+			$return_array[] = $export_row;
+		}
+		
+		return $return_array;
+	}
+
+
+	/**
+	* Function import
+	*
+	* @param array $data Post Data.
+	*
+	* @return array
+	*/
+	public function import($data)
+	{
+		$pr_seq = $data['project_seq'];
+
+		echo "<script> top.myUpdateProgress(0,'Step 1 : Data Loading...');</script>";
+
+		$worksheet	= $data['import_data'];
+		unset($data['import_data']);
+
+		$highestRow	= $worksheet->getHighestRow();
+		$highestColumn      = $worksheet->getHighestColumn();
+		$highestColumnIndex = PHPExcel_Cell::columnIndexFromString($highestColumn);
+		echo "<script> top.myUpdateProgress(100,'Step 1 : Data Loading...');</script>";
+
+		if($highestRow > 1001){
+			$result_data['result'] = FALSE;
+			$msg['over'] = 'Over Max Row(1000) : '.($highestRow -1);
+			$result_data['msg'] = json_encode($msg);
+
+			return $result_data;
+		}
+		if($highestColumnIndex > 50){
+			$result_data['result'] = FALSE;
+			$msg['over'] = 'Over Max Column(50) : '.$highestColumnIndex;
+			$result_data['msg'] = json_encode($msg);
+			return $result_data;
+		}
+
+		echo "<script> top.myUpdateProgress(0,'Step 2 : Data Checking...');</script>";
+
+		/*
+			ID 중복 확인
+		* /
+		$df_id_arry = array();
+		for ($row = 2; $row <= $highestRow; ++ $row) {
+			if($data['import_check_id']){
+				$df_id_cell = $worksheet->getCellByColumnAndRow(0, $row);
+				$df_id = $df_id_cell->getValue();
+				array_push($df_id_arry,trim($df_id));
+			}
+			$tmp_per = (round(($row/$highestRow)*100) > 20)?(round(($row/$highestRow)*100)-20):0;
+
+			echo "<script> top.myUpdateProgress(".$tmp_per.",'Step 2 : Data Checking...');</script>";
+		}
+
+		if($data['import_check_id']){
+			$duplicate_id_array = array();
+			$duplicate_seq_array = array();
+			$this->db->select('df_seq, df_id');
+			$this->db->from('otm_defect');
+			$this->db->where('otm_project_pr_seq',$pr_seq);
+			$this->db->where_in('df_id',$df_id_arry);
+			$query = $this->db->get();
+			if($query->result()){
+				foreach ($query->result() as $row)
+				{
+					array_push($duplicate_id_array,$row->df_id);
+					$duplicate_seq_array[$row->df_id] = $row->df_seq;
+				}
+			}
+		}
+
+		if(count($duplicate_id_array) > 0 && $data['update'] == false){
+			$result_data['result'] = FALSE;
+			$msg['duplicate_id'] = $duplicate_id_array;
+			$result_data['msg'] = json_encode($msg);
+
+			return $result_data;
+		}
+		/ *
+			End : ID 중복 확인
+		*/
+
+
+		/**
+			Get OTM Mamber Data
+		*/
+		$member_list = array();
+		$this->db->from('otm_member');
+		$query = $this->db->get();
+		foreach ($query->result() as $row)
+		{
+			$member_list[$row->mb_name] = $row->mb_email;
+		}
+		/**
+			End : Get OTM Mamber Data
+		*/
+
+
+		/**
+			Get Project Code Data
+		*/
+		$p_code = array();
+
+		$this->db->from('otm_project_code as a');
+		$this->db->where('otm_project_pr_seq',$pr_seq);
+		$query = $this->db->get();
+		foreach ($query->result() as $row)
+		{
+			$p_code[$row->pco_name] = $row->pco_seq;
+		}
+		/**
+			End : Get Project Code Data
+		*/
+
+
+		/**
+			Get UserForm Data
+		*/
+		$this->db->select('pc_seq,pc_name,pc_formtype');
+		$this->db->from('otm_project_customform');
+		$this->db->where('otm_project_pr_seq',$pr_seq);
+		$this->db->where('pc_category','ID_REQ');
+		$this->db->where('pc_is_use','Y');
+		$this->db->order_by('ABS(pc_1)', 'asc');
+		$this->db->order_by('pc_seq', 'asc');
+
+		$query = $this->db->get();
+		$userform_list = array();
+		foreach ($query->result() as $row)
+		{
+			$userform_list[] = $row;
+		}
+
+		/**
+			End : Get UserForm Data
+		*/
+
+
+		for ($row = 2; $row <= $highestRow; ++ $row) {
+			$custom_form_data = array();
+
+			$col_array = array();
+			$userform_no = 0;
+
+			for ($col = 0; $col < $highestColumnIndex; ++ $col) {
+				$custom_form_row_data = array();
+
+				$cell = $worksheet->getCellByColumnAndRow($col, $row);
+				$val = $cell->getValue();
+				switch($col)
+				{
+					case 0:	$col_id = 'req_subject';
+							$col_array[$col_id] = trim($val);
+						break;
+					case 1:	$col_id = 'req_priority';
+							$col_array[$col_id] = trim($val);
+						break;
+					case 2:	$col_id = 'req_difficulty';
+							$col_array[$col_id] = trim($val);
+						break;
+					case 3:	$col_id = 'req_accept';
+							$col_array[$col_id] = trim($val);
+						break;
+					case 4:	$col_id = 'req_description';
+							$col_array[$col_id] = $val;
+						break;
+					/*case 5:	$col_id = 'req_assign';
+							$col_array[$col_id] = $member_list[$val];
+						break;*/
+					default:
+							if(isset($userform_list[$userform_no])){
+								$custom_form_row_data['name'] = $userform_list[$userform_no]->pc_name;
+								$custom_form_row_data['seq'] = $userform_list[$userform_no]->pc_seq;
+								$custom_form_row_data['type'] = $userform_list[$userform_no]->pc_formtype;
+								$custom_form_row_data['value'] = $val;
+								array_push($custom_form_data,$custom_form_row_data);
+								$userform_no++;
+							}else{
+								continue;
+							}
+						break;
+				}
+			}
+
+		
+			/*
+				Requirement Insert
+			*/
+			$import_excel_data = array(
+				'pr_seq' => $pr_seq,
+				'req_subject' => $col_array['req_subject'],
+				'req_description' => $col_array['req_description'],
+				'req_priority' => $col_array['req_priority'],
+				'req_difficulty' => $col_array['req_difficulty'],
+				'req_accept' => $col_array['req_accept'],
+				//'req_assign' => $col_array['req_assign'],				
+				'custom_form' => json_encode($custom_form_data),
+				'return_key' => 'seq'
+			);
+			$seq = $this->create_requirement($import_excel_data);
+			
+			echo "<script> top.myUpdateProgress(".round(($row/$highestRow)*100).",'Step 3 : Data Importing...(".$col_array['req_subject'].":".$row."/".$highestRow.")');</script>";
+		}
+
+		$result_data['result'] = TRUE;
+		$result_data['msg'] = $highestRow;
+
+		return $result_data;
 	}
 }
 //End of file requirement_m.php

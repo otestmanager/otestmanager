@@ -79,12 +79,16 @@ class Login extends Controller
 			}
 			else{
 				$to_day = date("Y-m-d H:i:s");
-				echo '<font color=red>Login False ('.$to_day.')</font>';
+				$str = '<font color=red>Login False ('.$to_day.')</font>';
+				echo $str;
+				//echo '<font color=red>Login False ('.$to_day.')</font>';
 				exit;
 			}
 		}
 		else{
-			echo '<font color=red>'.validation_errors().'</font>';
+			$str = '<font color=red>'.validation_errors().'</font>';
+			echo $str;
+			//echo '<font color=red>'.validation_errors().'</font>';
 			exit;
 		}
 	}

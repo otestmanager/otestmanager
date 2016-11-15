@@ -479,7 +479,11 @@ class Com_testcase_m extends CI_Model
 	*/
 	private function get_comtc_ord_maxval($table,$ver_seq,$pid)
 	{
-		$str_sql = "select max(ct_ord) as max_ord from otm_com_testcase where otm_com_version_v_seq='$ver_seq' and ct_inp_pid='$pid'";
+		if($table == ''){
+			$table = 'otm_com_testcase';
+		}
+
+		$str_sql = "select max(ct_ord) as max_ord from ".$table." where otm_com_version_v_seq='$ver_seq' and ct_inp_pid='$pid'";
 		$query = $this->db->query($str_sql);
 		$max_result = $query->result();
 
@@ -899,7 +903,7 @@ class Com_testcase_m extends CI_Model
 			}
 		}
 
-		$per = 0;
+		//$per = 0;
 		for ($row = 2; $row <= $highestRow; ++ $row) {
 			$col_array = array();
 
@@ -913,9 +917,13 @@ class Com_testcase_m extends CI_Model
 							$val = trim($val);
 							break;
 					case 1:	$col_id = 'ct_id';
-							$ct_id = trim($val);			break;
+							//$ct_id = trim($val);
+							$$val = trim($val);	
+							break;
 					case 2:	$col_id = 'ct_subject';
-							$subject = trim($val);			break;
+							//$subject = trim($val);			
+							$val = trim($val);
+							break;
 					case 3:	$col_id = 'ct_precondition';	break;
 					case 4:	$col_id = 'ct_testdata';		break;
 					case 5:	$col_id = 'ct_procedure';		break;
@@ -947,7 +955,7 @@ class Com_testcase_m extends CI_Model
 					'return_key' => 'seq'
 				);
 
-				$ct_id = $this->update_testcase($update_data);
+				$this->update_testcase($update_data);
 			}else{
 				//insert
 				$create_data = array(
@@ -965,10 +973,10 @@ class Com_testcase_m extends CI_Model
 					'return_key' => 'seq'
 				);
 
-				$seq = $this->create_testcase($create_data);
+				$this->create_testcase($create_data);
 			}
-
-			echo "<script> top.myUpdateProgress(".round(($row/$highestRow)*100).",'Data Importing...');</script>";
+			$str = "<script> top.myUpdateProgress(".round(($row/$highestRow)*100).",'Data Importing...');</script>";
+			echo $str;
 		}
 
 		$result_data['result'] = TRUE;

@@ -5,7 +5,7 @@
  * @author STA <otm@sta.co.kr>
  */
 
-include_once($data['skin_dir'].'/locale-'.$data['mb_lang'].'.php');
+include_once $data['skin_dir'].'/locale-'.$data['mb_lang'].'.php';
 ?>
 <script type="text/javascript">
 

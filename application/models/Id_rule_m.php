@@ -62,7 +62,7 @@ class Id_rule_m extends CI_Model
 		switch($data['co_type'])
 		{
 			case "tc_id_rule":
-				$pattern = ",";
+				$pattern = "/,/";
 
 				$this->db->where('co_type', 'df_id_rule');
 				$query = $this->db->get('otm_code');
@@ -71,7 +71,7 @@ class Id_rule_m extends CI_Model
 					$temp_arr[] = $temp_row;
 
 					$temp_default_value = $temp_row->co_default_value;
-					$rule_arr = split($pattern,$temp_default_value);
+					$rule_arr = preg_split($pattern,$temp_default_value);
 
 					if(isset($rule_arr[0]) || $tmp_arr[0])
 					{
@@ -110,16 +110,16 @@ class Id_rule_m extends CI_Model
 	{
 		if($data['co_is_required'] === 'Y'){
 			$str_sql = "update otm_code set co_is_required='N' where co_type='".$data['co_type']."'";
-			$query = $this->db->query($str_sql);
+			$this->db->query($str_sql);
 		}
 		if($data['co_is_default'] === 'Y'){
 			$str_sql = "update otm_code set co_is_default='N' where co_type='".$data['co_type']."'";
-			$query = $this->db->query($str_sql);
+			$this->db->query($str_sql);
 		}
 
 
 		$this->db->insert('otm_code', $data);
-		$result = $this->db->insert_id();
+		//$result = $this->db->insert_id();
 		return 'ok';
 	}
 
@@ -137,7 +137,7 @@ class Id_rule_m extends CI_Model
 			{
 				case "use_df_id":
 					//해당 TC ID 체계를 사용중인 결함 ID 체계(co_name)를 변경해준다.
-					$pattern = ",";
+					$pattern = "/,/";
 					$this->db->where('co_type', 'df_id_rule');
 					$query = $this->db->get('otm_code');
 					foreach ($query->result() as $temp_row)
@@ -145,7 +145,7 @@ class Id_rule_m extends CI_Model
 						$temp_arr[] = $temp_row;
 
 						$temp_default_value = $temp_row->co_default_value;
-						$rule_arr = split($pattern,$temp_default_value);
+						$rule_arr = preg_split($pattern,$temp_default_value);
 
 						if(isset($rule_arr[0]) || $tmp_arr[0])
 						{

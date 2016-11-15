@@ -183,7 +183,7 @@ class Storage_m extends CI_Model {
 
 		$permission = $this->permission_Check($data);
 
-		$auth_read_array = $permission[0];
+		//$auth_read_array = $permission[0];
 		$auth_wd_array = $permission[1];
 
 		$temp_arr['psp_write'] = $auth_wd_array[$ops_seq]['psp_write'];
@@ -275,7 +275,7 @@ class Storage_m extends CI_Model {
 	*/
 	function delete_folder($data)
 	{
-		$pr_seq	= $data['pr_seq'];
+		//$pr_seq	= $data['pr_seq'];
 		$node	= $data['node'];
 
 		$date=date('Y-m-d H:i:s');
@@ -543,13 +543,13 @@ class Storage_m extends CI_Model {
 
 		$cnt_result = $this->db->count_all_results();
 
-		$order_by_sql = " order by a.of_no desc ";
+		//$order_by_sql = " order by a.of_no desc ";
 		$sort = $data['sort'][0];
 
 		if($sort){
-			$order_by_sql = " order by ";
+			//$order_by_sql = " order by ";
 			foreach($sort as $row => $v){
-				$order_by_sql .= $v.' ';
+				//$order_by_sql .= $v.' ';
 				$this->db->order_by($v,'');
 			}
 		}else{

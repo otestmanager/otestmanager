@@ -58,7 +58,11 @@ class Import extends Controller {
 
 		$FileName = mktime().'_import.xls';
 
-		@chmod("uploads", 0707);
+		$error_rep = error_reporting();
+		error_reporting(0);  		
+		chmod("uploads", 0707);
+		error_reporting($error_rep);
+
 		move_uploaded_file($_FILES['form_file']["tmp_name"],"uploads/".$FileName);
 
 		$path = "uploads/".$FileName;
@@ -105,13 +109,15 @@ class Import extends Controller {
 				$data['module_directory'] =	$module_directory;
 				$data['controller'] = $controller;
 
-				if(@$function) {
+				$error_rep = error_reporting();
+				error_reporting(0);
+				if($function) {
 					$data['function'] = $function;
 				}
 				else{
 					$data['function'] = '';
 				}
-
+				error_reporting($error_rep);
 				$data['skin'] = 'default';
 
 				$value = $this->load->model($module_directory.'/'.$model)->import($data);

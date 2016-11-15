@@ -256,7 +256,7 @@ class Tracking_m extends CI_Model {
 		/**
 			Get UserForm Data
 		*/
-		$p_customform = array();
+		//$p_customform = array();
 
 		$this->db->select('pc_seq,pc_name');
 		$this->db->from('otm_project_customform');
@@ -457,10 +457,10 @@ class Tracking_m extends CI_Model {
 
 		$date=date('Y-m-d H:i:s');
 		$writer = $this->session->userdata('mb_email');
-		$writer_name = $this->session->userdata('mb_name');
+		//$writer_name = $this->session->userdata('mb_name');
 
-		$result_value = $data['result_value'];
-		$result_msg = $data['result_msg'];
+		//$result_value = $data['result_value'];
+		//$result_msg = $data['result_msg'];
 
 		$tl_list = json_decode($data['tl_seq']);
 		$df_list = json_decode($data['df_seq']);
@@ -613,17 +613,17 @@ class Tracking_m extends CI_Model {
 
 		$date=date('Y-m-d H:i:s');
 		$writer = $this->session->userdata('mb_email');
-		$writer_name = $this->session->userdata('mb_name');
+		//$writer_name = $this->session->userdata('mb_name');
 
-		$result_value = $data['result_value'];
-		$result_msg = $data['result_msg'];
+		//$result_value = $data['result_value'];
+		//$result_msg = $data['result_msg'];
 
 		$tl_list = json_decode($data['tl_seq']);
 		$df_list = json_decode($data['df_seq']);
 
 		for($i=0; $i<count($tl_list); $i++)
 		{
-			$duplicate_df_array = array();
+			//$duplicate_df_array = array();
 			$tl_seq = $tl_list[$i];
 			$this->db->select('tr.*, df.df_id, tc.tc_out_id,tc.tc_seq');
 			$this->db->from('otm_testcase_result as tr');

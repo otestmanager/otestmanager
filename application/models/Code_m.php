@@ -52,7 +52,7 @@ class Code_m extends CI_Model
 	*/
 	function code_list_workflow_valuefield($data)
 	{
-		$rp_seq = trim($data['rp_seq']);
+		//$rp_seq = trim($data['rp_seq']);
 		$rp_type = trim($data['type']);
 
 		$value_field	= array();
@@ -173,15 +173,15 @@ class Code_m extends CI_Model
 	{
 		if($data['co_is_required'] === 'Y'){
 			$str_sql = "update otm_code set co_is_required='N' where co_type='".$data['co_type']."'";
-			$query = $this->db->query($str_sql);
+			$this->db->query($str_sql);
 		}
 		if($data['co_is_default'] === 'Y'){
 			$str_sql = "update otm_code set co_is_default='N' where co_type='".$data['co_type']."'";
-			$query = $this->db->query($str_sql);
+			$this->db->query($str_sql);
 		}
 
 		$this->db->insert('otm_code', $data);
-		$result = $this->db->insert_id();
+		
 		return 'ok';
 	}
 
@@ -196,11 +196,11 @@ class Code_m extends CI_Model
 	{
 		if($data['co_is_required'] === 'Y'){
 			$str_sql = "update otm_code set co_is_required='N' where co_type='".$data['co_type']."'";
-			$query = $this->db->query($str_sql);
+			$this->db->query($str_sql);
 		}
 		if($data['co_is_default'] === 'Y'){
 			$str_sql = "update otm_code set co_is_default='N' where co_type='".$data['co_type']."'";
-			$query = $this->db->query($str_sql);
+			$this->db->query($str_sql);
 		}
 
 		$data2 = array(

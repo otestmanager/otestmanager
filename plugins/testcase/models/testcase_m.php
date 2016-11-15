@@ -418,7 +418,7 @@ class Testcase_m extends CI_Model {
 			$member_list[$row->mb_email] = $row->mb_name;
 		}
 
-		$p_customform = array();
+		//$p_customform = array();
 
 		// 사용자 정의값을 쿼리에서 프로그램으로 변경 kslovee 2015-12-07
 		$custom_arr = array();
@@ -486,7 +486,7 @@ class Testcase_m extends CI_Model {
 		$this->db->order_by('pc_seq', 'asc');
 
 		$query = $this->db->get();
-		$str_select = "";
+		
 		$cnt = 0;
 
 		$column_arr = array();
@@ -907,12 +907,12 @@ class Testcase_m extends CI_Model {
 		$modify_array['tc_expected_result'] = $data['tc_expected_result'];
 		$custom_form = $data['custom_form'];
 
-		if($data['type'] === 'suite'){
+		/*if($data['type'] === 'suite'){
 			$id_head = 'ts_';
 		}
 		else{
 			$id_head = 'tc_';
-		}
+		}*/
 
 		$history = array();
 		$history['pr_seq'] = $data['pr_seq'];
@@ -1495,7 +1495,7 @@ class Testcase_m extends CI_Model {
 		$insert_array['last_update'] = '';
 
 		$this->db->insert('otm_testcase_result', $insert_array);
-		$result = $this->db->insert_id();
+		//$result = $this->db->insert_id();
 
 		$return_data = array();
 		$return_data['result_value']		= $data['result_text'];
@@ -1630,7 +1630,7 @@ class Testcase_m extends CI_Model {
 				$insert_array['tl_ord'] = $this->get_ord_maxval('otm_testcase_link','',$data['tp_seq'],$insert_array['tl_inp_pid']);
 
 				$this->db->insert('otm_testcase_link', $insert_array);
-				$result = $this->db->insert_id();
+				//$result = $this->db->insert_id();
 			}
 
 			$this->db->select('tc_seq, tc_inp_id, tc_ord');
@@ -1670,7 +1670,7 @@ class Testcase_m extends CI_Model {
 	{
 		if(isset($data['target_id']) && $data['target_id'] === 'root') $data['target_id'] = 'tc_0';
 
-		$pr_seq				= $data['pr_seq'];
+		//$pr_seq				= $data['pr_seq'];
 		$tc_plan_seq		= $data['tc_plan'];
 		$target_type		= $data['target_type'];
 		$target_id			= $data['target_id'];
@@ -1684,7 +1684,7 @@ class Testcase_m extends CI_Model {
 			$query = $this->db->query($str_sql);
 			$result = $query->result();
 			$tl_inp_pid = $result[0]->tl_inp_pid;
-			$otm_testcase_tc_seq = $result[0]->otm_testcase_tc_seq;
+			//$otm_testcase_tc_seq = $result[0]->otm_testcase_tc_seq;
 			$tl_ord = $result[0]->tl_ord;
 
 			$modify_array['tl_inp_pid'] = $tl_inp_pid;
@@ -1715,7 +1715,7 @@ class Testcase_m extends CI_Model {
 				$query = $this->db->query($str_sql);
 				$result = $query->result();
 				$tl_inp_pid = $result[0]->tl_inp_pid;
-				$otm_testcase_tc_seq = $result[0]->otm_testcase_tc_seq;
+				//$otm_testcase_tc_seq = $result[0]->otm_testcase_tc_seq;
 				$tl_ord = $result[0]->tl_ord;
 
 				$modify_array['tl_inp_pid'] = $tl_inp_pid;
@@ -1873,7 +1873,7 @@ class Testcase_m extends CI_Model {
 		/**
 			Get UserForm Data
 		*/
-		$p_customform = array();
+		//$p_customform = array();
 
 		$custom_arr = array();
 		$this->db->select('pc_seq,otm_project_pr_seq,pc_name,b.otm_testcase_tc_seq,b.tcv_custom_value as tcv_custom_value');
@@ -1953,7 +1953,7 @@ class Testcase_m extends CI_Model {
 			";
 		}
 		$query = $this->db->query($str_sql);
-		$result_length = 0;
+		
 		foreach ($query->result() as $temp_row)
 		{
 			$temp_arr['location'] = "";
@@ -1973,7 +1973,7 @@ class Testcase_m extends CI_Model {
 			$temp_arr['regdate'] = substr($temp_row->regdate, 0, 10);
 
 			$result_writer = "";
-			$result_value = "";
+			//$result_value = "";
 
 			$result_length = count($result_writer);
 			$exp_pid = explode('_', $temp_arr['pid']);
@@ -1989,7 +1989,7 @@ class Testcase_m extends CI_Model {
 			$this->putTestCaseItem($this->root_array[$i]['id']);
 		}
 		$folder_except = array();
-		$suite_id=0;
+		//$suite_id=0;
 		for($i=0;$i<sizeof($this->return_array);$i++){
 
 			if($this->return_array[$i]['tc_is_task'] != "folder"){
@@ -2004,7 +2004,7 @@ class Testcase_m extends CI_Model {
 
 				array_push($folder_except,$this->return_array[$i]);
 			}else{
-				$suite_id = $this->return_array[$i]['tc_id'];
+				//$suite_id = $this->return_array[$i]['tc_id'];
 			}
 		}
 		return $folder_except;
@@ -2019,15 +2019,11 @@ class Testcase_m extends CI_Model {
 	* @return array
 	*/
 	function copy_comtestcase($data)
-	{
-		$temp_arr = array();
+	{		
 		$project_seq = $data['project_seq'];
 		$product_seq = $data['p_seq'];
 		$vsrsion_seq = $data['v_seq'];
-
-		$date=date('Y-m-d H:i:s');
-		$writer = $this->session->userdata('mb_email');
-
+		
 		$before	= array('/cts/', '/ctc/');
 		$after	= array('ts', 'tc');
 
@@ -2035,7 +2031,7 @@ class Testcase_m extends CI_Model {
 		$input_form = $this->input_item_list($data,"array");
 
 		$new_inp_id = array();
-		$new_inp_pid = array();
+		
 
 		if(isset($project_seq) && isset($product_seq) && isset($vsrsion_seq)){
 
@@ -2233,24 +2229,26 @@ class Testcase_m extends CI_Model {
 			'pc_is_use'	=>	'Y'
 		);
 		$userform_list = $this->load->model('project_setup_m')->userform_list($userform_param);
-
-		echo "<script> top.myUpdateProgress(10,'Step 1 : Data Loading...');</script>";
+		$str = "<script> top.myUpdateProgress(10,'Step 1 : Data Loading...');</script>";
+		echo $str;
 
 		$worksheet	= $data['import_data'];
 		unset($data['import_data']);
-
-		echo "<script> top.myUpdateProgress(20,'Step 1 : Data Loading...');</script>";
+		$str = "<script> top.myUpdateProgress(20,'Step 1 : Data Loading...');</script>";
+		echo $str;
 
 		$highestRow	= $worksheet->getHighestRow();
-		echo "<script> top.myUpdateProgress(30,'Step 1 : Data Loading...');</script>";
+		$str = "<script> top.myUpdateProgress(30,'Step 1 : Data Loading...');</script>";
+		echo $str;
 
 		$highestColumn      = $worksheet->getHighestColumn();
-		echo "<script> top.myUpdateProgress(40,'Step 1 : Data Loading...');</script>";
+		$str = "<script> top.myUpdateProgress(40,'Step 1 : Data Loading...');</script>";
+		echo $str;
 
 		$highestColumnIndex = PHPExcel_Cell::columnIndexFromString($highestColumn);
-		echo "<script> top.myUpdateProgress(50,'Step 1 : Data Loading...');</script>";
+		$str = "<script> top.myUpdateProgress(100,'Step 1 : Data Loading...');</script>";
+		echo $str;
 
-		echo "<script> top.myUpdateProgress(100,'Step 1 : Data Loading...');</script>";
 		if($highestRow > 1001){
 			$result_data['result'] = FALSE;
 			$msg['over'] = 'Over Max Row(1000) : '.($highestRow -1);
@@ -2264,8 +2262,8 @@ class Testcase_m extends CI_Model {
 			$result_data['msg'] = json_encode($msg);
 			return $result_data;
 		}
-
-		echo "<script> top.myUpdateProgress(0,'Step 2 : Data Checking...');</script>";
+		$str = "<script> top.myUpdateProgress(0,'Step 2 : Data Checking...');</script>";
+		echo $str;
 
 		$this->tmp_location_array = array();
 		$tc_out_id = array();
@@ -2281,8 +2279,8 @@ class Testcase_m extends CI_Model {
 				array_push($tc_out_id,trim($tc_id));
 			}
 			$tmp_per = (round(($row/$highestRow)*100) > 20)?(round(($row/$highestRow)*100)-20):0;
-
-			echo "<script> top.myUpdateProgress(".$tmp_per.",'Step 2 : Data Checking...');</script>";
+			$str = "<script> top.myUpdateProgress(".$tmp_per.",'Step 2 : Data Checking...');</script>";
+			echo $str;
 		}
 
 		if($data['import_check_id']){
@@ -2387,10 +2385,10 @@ class Testcase_m extends CI_Model {
 					'custom_form' => json_encode($custom_form_data),
 					'return_key' => 'seq'
 				);
-				$seq = $this->create_testcase($import_excel_data);
+				$this->create_testcase($import_excel_data);
 			}
-
-			echo "<script> top.myUpdateProgress(".round(($row/$highestRow)*100).",'Step 3 : Data Importing...(".$col_array['tc_id'].":".$row."/".$highestRow.")');</script>";
+			$str = "<script> top.myUpdateProgress(".round(($row/$highestRow)*100).",'Step 3 : Data Importing...(".$col_array['tc_id'].":".$row."/".$highestRow.")');</script>";
+			echo $str;
 		}
 
 		$result_data['result'] = TRUE;
@@ -2474,22 +2472,20 @@ class Testcase_m extends CI_Model {
 	public function import_testcase_csv($data)
 	{
 		$pr_seq = $data['pr_seq'];
-		$filename = $_FILES['form_file']['name'];
+		//$filename = $_FILES['form_file']['name'];
 		$tmp_file = $_FILES['form_file']['tmp_name'];
 		$file_handle = fopen($tmp_file, "r");
 
 		$input_form = $this->input_item_list($data,"array");
 
 		$k = 0;
-		$message = "";
+		
 		$csvFile = array();
 		$columns = sizeof($input_form)+1;
-		$HeadArray = array();
-		$tmpStr="";
+				
 		$import_data=array();
-		$conditionName=array();
-		while (!feof($file_handle) ) {
-			$tmp_text = "";
+		
+		while (!feof($file_handle) ) {			
 			$line_of_text = fgetcsv($file_handle, 1024);
 
 			if($line_of_text[0]){

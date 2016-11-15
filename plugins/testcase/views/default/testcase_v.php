@@ -5,7 +5,7 @@
  * @author STA <otm@sta.co.kr>
  */
 
-@include_once("./plugins/defect/views/default/store.php");
+include_once "./plugins/defect/views/default/store.php";
 ?>
 <script type="text/javascript">
 	var status_value,severity_value,priority_value,frequency_value;

@@ -56,7 +56,7 @@ class Defect_m extends CI_Model {
 		 * 3 : '-' or '_'
 		 * 4 : id number length
 		 */
-		$rule_arr = split(',',$pco_default_value);
+		$rule_arr = preg_split('/,/',$pco_default_value);
 
 		$mb_lang = $this->session->userdata('mb_lang');
 
@@ -170,7 +170,7 @@ class Defect_m extends CI_Model {
 		/**
 			Get UserForm Data
 		*/
-		$p_customform = array();
+		//$p_customform = array();
 
 		$custom_arr = array();
 		$this->db->select('pc_seq,otm_project_pr_seq,pc_name,b.otm_defect_df_seq,b.cv_custom_value as cv_custom_value');
@@ -193,7 +193,7 @@ class Defect_m extends CI_Model {
 		$this->db->order_by('ABS(pc_1)', 'asc');
 
 		$query = $this->db->get();
-		$str_select = "";
+
 		$cnt = 0;
 
 		$custom_form_array = array();
@@ -208,8 +208,8 @@ class Defect_m extends CI_Model {
 		$this->db->start_cache();
 
 		$arr = array();
-		$where_quy = "";
-		$custom_search = "";
+
+
 
 		$search_json = json_decode($data['search_array']);
 		$search_num = 0;
@@ -349,13 +349,13 @@ class Defect_m extends CI_Model {
 										asm.mb_name as df_assign_member,
 										mb.mb_name as writer_name
 										');
-		$order_by_sql = " order by a.df_seq desc ";
+		//$order_by_sql = " order by a.df_seq desc ";
 		$sort = $data['sort'][0];
 
 		if($sort){
-			$order_by_sql = " order by ";
+			//$order_by_sql = " order by ";
 			foreach($sort as $row => $v){
-				$order_by_sql .= $v.' ';
+				//$order_by_sql .= $v.' ';
 				$this->db->order_by($v,'');
 			}
 		}else{
@@ -787,12 +787,19 @@ class Defect_m extends CI_Model {
 	* @return integer
 	*/
 	function is_custom_value($df_seq,$form_seq){
+		/*
 		$str_sql = "select count(*) as cnt from otm_defect_custom_value
 					where
 						otm_defect_df_seq='$df_seq' and
 						otm_project_customform_pc_seq='$form_seq'
 					";
 		$query = $this->db->query($str_sql);
+		*/
+		$this->db->select('count(*) as cnt');
+		$this->db->where('otm_defect_df_seq',$df_seq);
+		$this->db->where('otm_project_customform_pc_seq',$form_seq);
+		$query = $this->db->get('otm_defect_custom_value');
+
 		$tmp_arr="";
 		foreach ($query->result() as $row)
 		{
@@ -865,6 +872,12 @@ class Defect_m extends CI_Model {
 			$history['pr_seq']	= $project_seq;
 			$history['df_seq']	= $df_seq;
 			$this->history->delete_history($history);
+
+			$modify_array = array(
+				'otm_defect_df_seq'		=> null
+			);
+			$where = array(	'otm_defect_df_seq'=>$df_seq);
+			$this->db->update('otm_testcase_result',$modify_array,$where);
 		}
 
 		return $result;
@@ -920,6 +933,7 @@ class Defect_m extends CI_Model {
 		}
 
 		$tmp_arr = "";
+		/*
 		$str_sql = "select
 						otm_project_customform_pc_seq as seq,
 						cv_custom_type as formtype,
@@ -933,18 +947,32 @@ class Defect_m extends CI_Model {
 		{
 			$tmp_arr[] = $row;
 		}
-
+		*/
+		
+		$this->db->select('otm_project_customform_pc_seq as seq,
+						cv_custom_type as formtype,
+						cv_custom_value as value');
+		$this->db->where('otm_defect_df_seq',$df_seq);		
+		$query = $this->db->get('otm_defect_custom_value');
+		$tmp_arr = $query->result_array();
 		$arr->df_customform = json_encode($tmp_arr);
 
 
 		/* attached file */
 		$file_arr = "";
-		$str_sql = "select * from otm_file where otm_project_pr_seq='$pr_seq' and otm_category='ID_DEFECT' and target_seq='$df_seq' order by of_no asc";
-		$query = $this->db->query($str_sql);
-		foreach ($query->result() as $row)
-		{
-			$file_arr[] = $row;
-		}
+		//$str_sql = "select * from otm_file where otm_project_pr_seq='$pr_seq' and otm_category='ID_DEFECT' and target_seq='$df_seq' order by of_no asc";
+		//$query = $this->db->query($str_sql);
+		//foreach ($query->result() as $row)
+		//{
+		//	$file_arr[] = $row;
+		//}
+
+		$this->db->where('otm_project_pr_seq',$pr_seq);
+		$this->db->where('otm_category','ID_DEFECT');
+		$this->db->where('target_seq',$df_seq);
+		$this->db->order_by('of_no asc');
+		$query = $this->db->get('otm_file');
+		$file_arr = $query->result_array();
 		$arr->fileform = json_encode($file_arr);
 
 		$arr->next_status = json_encode('{permission=>1,permission=>2}');
@@ -983,7 +1011,7 @@ class Defect_m extends CI_Model {
 	function view_defect_history($data)
 	{
 		$df_seq = $data['df_seq'];
-		$pr_seq = $data['pr_seq'];
+		//$pr_seq = $data['pr_seq'];
 
 		$history = array();
 
@@ -1089,7 +1117,7 @@ class Defect_m extends CI_Model {
 		/**
 			Get UserForm Data
 		*/
-		$p_customform = array();
+		//$p_customform = array();
 
 		$custom_arr = array();
 		$this->db->select('pc_seq,otm_project_pr_seq,pc_name,b.otm_defect_df_seq,b.cv_custom_value as cv_custom_value');
@@ -1215,8 +1243,8 @@ class Defect_m extends CI_Model {
 	public function import($data)
 	{
 		$pr_seq = $data['project_seq'];
-
-		echo "<script> top.myUpdateProgress(0,'Step 1 : Data Loading...');</script>";
+		$str = "<script> top.myUpdateProgress(0,'Step 1 : Data Loading...');</script>";
+		echo $str;
 
 		$worksheet	= $data['import_data'];
 		unset($data['import_data']);
@@ -1224,7 +1252,8 @@ class Defect_m extends CI_Model {
 		$highestRow	= $worksheet->getHighestRow();
 		$highestColumn      = $worksheet->getHighestColumn();
 		$highestColumnIndex = PHPExcel_Cell::columnIndexFromString($highestColumn);
-		echo "<script> top.myUpdateProgress(100,'Step 1 : Data Loading...');</script>";
+		$str = "<script> top.myUpdateProgress(100,'Step 1 : Data Loading...');</script>";
+		echo $str;
 
 		if($highestRow > 1001){
 			$result_data['result'] = FALSE;
@@ -1239,8 +1268,8 @@ class Defect_m extends CI_Model {
 			$result_data['msg'] = json_encode($msg);
 			return $result_data;
 		}
-
-		echo "<script> top.myUpdateProgress(0,'Step 2 : Data Checking...');</script>";
+		$str = "<script> top.myUpdateProgress(0,'Step 2 : Data Checking...');</script>";
+		echo $str;
 
 		/*
 			ID 중복 확인
@@ -1253,8 +1282,8 @@ class Defect_m extends CI_Model {
 				array_push($df_id_arry,trim($df_id));
 			}
 			$tmp_per = (round(($row/$highestRow)*100) > 20)?(round(($row/$highestRow)*100)-20):0;
-
-			echo "<script> top.myUpdateProgress(".$tmp_per.",'Step 2 : Data Checking...');</script>";
+			$str = "<script> top.myUpdateProgress(".$tmp_per.",'Step 2 : Data Checking...');</script>";
+			echo $str;
 		}
 
 		if($data['import_check_id']){
@@ -1460,8 +1489,8 @@ class Defect_m extends CI_Model {
 					return $result_data;
 				}
 			}
-
-			echo "<script> top.myUpdateProgress(".round(($row/$highestRow)*100).",'Step 3 : Data Importing...(".$col_array['df_id'].":".$row."/".$highestRow.")');</script>";
+			$str = "<script> top.myUpdateProgress(".round(($row/$highestRow)*100).",'Step 3 : Data Importing...(".$col_array['df_id'].":".$row."/".$highestRow.")');</script>";
+			echo $str;
 		}
 
 		$result_data['result'] = TRUE;
@@ -1648,7 +1677,7 @@ class Defect_m extends CI_Model {
 		/*
 		 *	Project Info
 		 */
-		$project_info = array();
+		//$project_info = array();
 		$pr_name = '';
 
 		$this->db->select('pr_seq, pr_name');
@@ -1740,11 +1769,11 @@ class Defect_m extends CI_Model {
 		}
 		$defect_list_msg .= "</table>";
 
-		$yoil_ko = array("일","월","화","수","목","금","토");
-		if($mb_lang === "ko"){
-			$yoil = '('.$yoil_ko[date('w')].')';
-		}
-		$datetime = date('Y-m-d').$yoil.date('H:i:s');
+		//$yoil_ko = array("일","월","화","수","목","금","토");
+		//if($mb_lang === "ko"){
+		//	$yoil = '('.$yoil_ko[date('w')].')';
+		//}
+		//$datetime = date('Y-m-d').$yoil.date('H:i:s');
 
 		/*
 		 * Send Mail

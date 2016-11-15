@@ -29,17 +29,17 @@ class Otm_m extends CI_Model
 	*/
 	function project_list($data)
 	{
-		$temp_arr = array();
+		//$temp_arr = array();
 		$writer = $this->session->userdata('mb_email');
 		$mb_is_admin = $this->session->userdata('mb_is_admin');
 
 		$start = (isset($data['start']))?$data['start']:null;
 		$limit = (isset($data['limit']))?$data['limit']:null;
-		if($start != null && $limit != null){
+		/*if($start != null && $limit != null){
 			$limitSql = " limit $limit OFFSET $start ";
 		}else{
 			$limitSql = "";
-		}
+		}*/
 
 		/**
 			Get Project Defect Data
@@ -90,7 +90,7 @@ class Otm_m extends CI_Model
 	* @return array
 	*/
 	function project_totalCnt(){
-		$temp_arr = array();
+		//$temp_arr = array();
 		$writer = $this->session->userdata('mb_email');
 		$mb_is_admin = $this->session->userdata('mb_is_admin');
 
@@ -179,7 +179,7 @@ class Otm_m extends CI_Model
 			$id_rule_arr[] = $temp_row;
 		}
 
-		$pattern = ",";
+		$pattern = "/,/";
 		for($i=0; $i<count($id_rule_arr); $i++)
 		{
 			$temp_tc_co_seq = '';
@@ -188,7 +188,7 @@ class Otm_m extends CI_Model
 			//df id rule 찾기
 			if($id_rule_arr[$i]->co_type === 'df_id_rule'){
 				$temp_default_value = $id_rule_arr[$i]->co_default_value;
-				$rule_arr = split($pattern,$temp_default_value);
+				$rule_arr = preg_split($pattern,$temp_default_value);
 
 				//tc id rule 사용중인지 확인
 				if(isset($rule_arr[0]) || $tmp_arr[0])
@@ -336,7 +336,7 @@ class Otm_m extends CI_Model
 			$id_rule_arr[] = $temp_row;
 		}
 
-		$pattern = ",";
+		$pattern = "/,/";
 		for($i=0; $i<count($id_rule_arr); $i++)
 		{
 			$temp_tc_co_seq = '';
@@ -345,7 +345,7 @@ class Otm_m extends CI_Model
 			//df id rule
 			if($id_rule_arr[$i]->co_type === 'df_id_rule'){
 				$temp_default_value = $id_rule_arr[$i]->co_default_value;
-				$rule_arr = split($pattern,$temp_default_value);
+				$rule_arr = preg_split($pattern,$temp_default_value);
 
 				//tc id rule
 				if(isset($rule_arr[0]) || $tmp_arr[0])
@@ -493,7 +493,7 @@ class Otm_m extends CI_Model
 
 			foreach ($query->result() as $temp_row)
 			{
-				$df_seq							= $temp_row->df_seq;
+				//$df_seq							= $temp_row->df_seq;
 				$data['otm_project_pr_seq']		= $project_seq;
 				$data['df_id']					= $temp_row->df_id;
 				$data['df_subject']				= $temp_row->df_subject;
@@ -587,7 +587,7 @@ class Otm_m extends CI_Model
 
 					$this->db->insert('otm_file', $data);
 
-					$default_directory = 'uploads/files/'.$project_seq."/";
+					//$default_directory = 'uploads/files/'.$project_seq."/";
 					if(is_dir('uploads/files/'.$project_seq) != true){
 
 						@mkdir("uploads/files/".$project_seq, 0707);
@@ -757,7 +757,7 @@ class Otm_m extends CI_Model
 
 					$this->db->insert('otm_file', $data);
 
-					$default_directory = 'uploads/files/'.$project_seq."/";
+					//$default_directory = 'uploads/files/'.$project_seq."/";
 					if(is_dir('uploads/files/'.$project_seq) != true){
 
 						@mkdir("uploads/files/".$project_seq, 0707);
@@ -841,7 +841,7 @@ class Otm_m extends CI_Model
 
 					$this->db->insert('otm_file', $data);
 
-					$default_directory = 'uploads/files/'.$project_seq."/";
+					//$default_directory = 'uploads/files/'.$project_seq."/";
 					if(is_dir('uploads/files/'.$project_seq) != true){
 
 						@mkdir("uploads/files/".$project_seq, 0707);
@@ -899,7 +899,7 @@ class Otm_m extends CI_Model
 		$this->db->set('otm_project_group_pg_seq', $pg_seq);
 
 		$pr_ord = $this->get_ord_maxval('otm_project','otm_project_group_pg_seq',$pg_seq,'pr_ord');
-		$this->db->set('pr_ord', $pg_seq);
+		$this->db->set('pr_ord', $pr_ord);
 
 		$this->db->insert('otm_project');
 		$result = $this->db->insert_id();
@@ -1013,7 +1013,7 @@ class Otm_m extends CI_Model
 		$this->db->set('otm_project_group_pg_seq', $pg_seq);
 
 		$pr_ord = $this->get_ord_maxval('otm_project','otm_project_group_pg_seq',$pg_seq,'pr_ord');
-		$this->db->set('pr_ord', $pg_seq);
+		$this->db->set('pr_ord', $pr_ord);
 
 		$this->db->insert('otm_project');
 		$result = $this->db->insert_id();
@@ -1049,7 +1049,7 @@ class Otm_m extends CI_Model
 
 		$writer = $this->session->userdata('mb_email');
 		$mb_is_admin = $this->session->userdata('mb_is_admin');
-		$mb_lang = $this->session->userdata('mb_lang');
+		//$mb_lang = $this->session->userdata('mb_lang');
 
 		$pid = ($node_info[1])?$node_info[1]:0;
 		$temp_arr = array();
@@ -1209,7 +1209,7 @@ class Otm_m extends CI_Model
 	*/
 	function permission_list()
 	{
-		$temp_arr = array();
+		//$temp_arr = array();
 
 		$this->db->select('pmi_category,pmi_name,pmi_value');
 		$this->db->from('otm_role_permission');
@@ -1244,17 +1244,17 @@ class Otm_m extends CI_Model
 	function project_list_export($data)
 	{
 
-		$temp_arr = array();
+		//$temp_arr = array();
 		$writer = $this->session->userdata('mb_email');
 		$mb_is_admin = $this->session->userdata('mb_is_admin');
 
 		$start = (isset($data['start']))?$data['start']:null;
 		$limit = (isset($data['limit']))?$data['limit']:null;
-		if($start != null && $limit != null){
+		/*if($start != null && $limit != null){
 			$limitSql = " limit $limit OFFSET $start ";
 		}else{
 			$limitSql = "";
-		}
+		}*/
 
 		/**
 			Get Project Defect Data
@@ -1428,7 +1428,7 @@ class Otm_m extends CI_Model
 
 		$writer = $this->session->userdata('mb_email');
 		$mb_is_admin = $this->session->userdata('mb_is_admin');
-		$mb_lang = $this->session->userdata('mb_lang');
+		//$mb_lang = $this->session->userdata('mb_lang');
 
 		/**
 			Get OTM Mamber Data
@@ -1761,9 +1761,9 @@ class Otm_m extends CI_Model
 		$node_info = explode('_', $node_info);
 		$pid = ($node_info[1])?$node_info[1]:0;
 
-		$writer = $this->session->userdata('mb_email');
-		$mb_is_admin = $this->session->userdata('mb_is_admin');
-		$mb_lang = $this->session->userdata('mb_lang');
+		//$writer = $this->session->userdata('mb_email');
+		//$mb_is_admin = $this->session->userdata('mb_is_admin');
+		//$mb_lang = $this->session->userdata('mb_lang');
 
 		$temp_arr = array();
 		$i=0;

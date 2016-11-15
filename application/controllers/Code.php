@@ -59,7 +59,7 @@ class Code extends Controller
 	*
 	* @return string
 	*/
-	public function code_list_workflow($type)
+	public function code_list_workflow()
 	{
 		$data = array(
 			'type' => 'status',

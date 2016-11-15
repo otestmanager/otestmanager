@@ -129,8 +129,8 @@ class History extends Controller {
 	 */
 	function delete_history($data)
 	{
-		$date=date("Y-m-d H:i:s");
-		$writer = $this->session->userdata('mb_email');
+		//$date=date("Y-m-d H:i:s");
+		//$writer = $this->session->userdata('mb_email');
 		$category = $data['category'];
 
 		if($category === 'defect'){

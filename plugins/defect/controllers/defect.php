@@ -343,16 +343,16 @@ class Defect extends Controller {
 		$role = $this->defect_role();
 
 		if(isset($role['defect_delete_all']) || $this->session->userdata('mb_is_admin') === 'Y'){
-			$v_role = 'all';
+			//$v_role = 'all';
 		}else if(isset($role['defect_delete'])){
-			$v_role = 'writer';
+			//$v_role = 'writer';
 			if($this->session->userdata('mb_email') !== $this->input->post('writer',true))
 			{
 				print "No authority. delete defect";
 				exit;
 			}
 		}else{
-			$v_role = '';
+			//$v_role = '';
 			print "No authority. delete defect";
 			exit;
 		}
@@ -527,7 +527,7 @@ class Defect extends Controller {
 				'last_update' => $result[$i]->last_updated
 			);
 
-			$df_seq = $this->defect_m->create_defect($defect_data);
+			$this->defect_m->create_defect($defect_data);
 		}
 
 		return "ok";

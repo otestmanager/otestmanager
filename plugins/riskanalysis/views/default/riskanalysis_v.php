@@ -87,6 +87,27 @@ function get_bar_chart(store,type)
 	/**
 	* Center Panel
 	*/
+
+	var risk_chart_store = Ext.create('Ext.data.Store', {
+		fields:['name', 'cnt'],
+		proxy: {
+			type	: 'ajax',	
+			url		: './index.php/Plugin_view/riskanalysis/riskanalysis_riskarea_riskitem_chart',
+			extraParams: {
+				pr_seq : project_seq
+			},
+			actionMethods: {
+				create: 'POST', read: 'POST', update: 'POST', destroy: 'POST'
+			},
+			reader: {
+				type: 'json',
+				totalProperty: 'totalCount',
+				rootProperty: 'data'
+			}
+		},
+		autoLoad:true
+	});
+/*
 	var data = [];
 	data.push({name : 'FTA',cnt : 0});
 	data.push({name : 'ITA',cnt : 0});
@@ -97,7 +118,29 @@ function get_bar_chart(store,type)
 		fields:['name', 'cnt'],
 		data: data
 	});
+*/
 
+
+	var req_chart_store = Ext.create('Ext.data.Store', {
+		fields:['name', 'cnt'],
+		proxy: {
+			type	: 'ajax',	
+			url		: './index.php/Plugin_view/riskanalysis/riskanalysis_riskitem_requirement_chart',
+			extraParams: {
+				pr_seq : project_seq
+			},
+			actionMethods: {
+				create: 'POST', read: 'POST', update: 'POST', destroy: 'POST'
+			},
+			reader: {
+				type: 'json',
+				totalProperty: 'totalCount',
+				rootProperty: 'data'
+			}
+		},
+		autoLoad:true
+	});
+/*
 	var data = [];
 	data.push({name : '회원가입',cnt : 5});
 	data.push({name : '로그인',cnt : 6});
@@ -107,7 +150,7 @@ function get_bar_chart(store,type)
 		fields:['name', 'cnt'],
 		data: data
 	});
-
+*/
 	var riskanalysis_center_panel =  {
 		region	: 'center',
 		xtype	: 'panel',

@@ -4,6 +4,7 @@
  * Created on 2014. 09. 19.
  * @author STA <otm@sta.co.kr>
  */
+ include_once($data['skin_dir'].'/locale-'.$data['mb_lang'].'.php');
 $today = date("Y-m-d");
 ?>
 
@@ -119,12 +120,60 @@ function get_bar_chart(store)
 	});
 }
 
+function get_bar_chart2(store)
+{
+	return Ext.create('Ext.panel.Panel', {
+		layout: 'fit',
+		items: [{
+			xtype: 'cartesian',
+			axes: [{
+				type: 'numeric',
+				position: 'left',
+				fields: ['total_cnt','open_cnt','close_cnt'],
+				minimum: 0
+			}, {
+				type: 'category',
+				position: 'bottom'
+			}],			
+			series: [{				
+				type: 'bar',
+				axis: 'left',
+				xField: 'name',
+				yField: 'total_cnt',
+				style: {
+					lineWidth: 2,
+					maxBarWidth: 30,
+					stroke: 'dodgerblue',
+					opacity: 0.6
+				},
+				label: {
+					field: 'total_cnt',
+					display: 'insideEnd'
+				},
+				tooltip: {
+					trackMouse: true,
+					renderer: function(storeItem, item) {
+						this.setHtml('Total Defect Count : '+storeItem.get('total_cnt')+'<br>Open Defect Count : '+storeItem.get('open_cnt')+'<br>Close Defect Count : '+storeItem.get('close_cnt'));
+					}
+				}
+			},{
+				type: 'line',	
+				axis: 'left',
+				xField: 'name',
+				yField: 'close_cnt'
+			}],
+			store: store
+		}]
+	});
+}
+
 function get_html_grid_win(title,columns,datas)
 {
 	var win = Ext.getCmp('html_grid_win');
 	if(win){
 		win.close();
 	}
+	
 
 	var colspan = 1;
 	var rowspan = 1;
@@ -140,6 +189,7 @@ function get_html_grid_win(title,columns,datas)
 			break;
 		}
 	}
+	
 
 	var innerHTML = "<table width=100% border=1><tr>";
 	for(var i=1;i<columns.length;i++){
@@ -159,6 +209,7 @@ function get_html_grid_win(title,columns,datas)
 		}
 	}
 	innerHTML += "</tr>";
+
 
 	for(var i=0;i<subColumn.length;i++){
 		innerHTML += "<td>"+subColumn[i]+"</td>";
@@ -180,7 +231,6 @@ function get_html_grid_win(title,columns,datas)
 		}
 		innerHTML += "</tr>";
 	}
-
 	innerHTML += "</table>";
 
 	Ext.create('Ext.window.Window', {
@@ -238,14 +288,17 @@ function get_plantestcase_result_summary_panel(add_panel_id,tp_seq)
 			var datas = this.proxy.reader.rawData.data;
 			var data = [];
 
-
 			for(var i=0; i<columns[0].subColumn.length; i++){
+				var cnt_value = 0;					
+				if(datas[0]){					
+					cnt_value = datas[0][Object.keys(datas[0])[i+1]];
+				}
 				data.push({
 					name : columns[0].subColumn[i].name,
-					cnt : datas[0][Object.keys(datas[0])[i+2]]
+					cnt : cnt_value
 				});
 			}
-
+			
 			var chart_store = Ext.create('Ext.data.JsonStore', {
 				fields:['name', 'cnt'],
 				data: data
@@ -1193,6 +1246,362 @@ function get_defect_frequency_panel(add_panel_id,tp_seq,start_date,end_date)
 	});
 }
 
+/*Risk 영역*/
+function get_risk_defect_summary(add_panel_id)
+{
+	var risk_defect_summary_plan_store = Ext.create('Ext.data.Store', {
+		fields:['pr_seq','tp_seq','text'],
+		proxy: {
+			type	: 'ajax',
+			url		: './index.php/Plugin_view/testcase/plan_list',
+			extraParams: {
+				pr_seq : <?=$project_seq?>
+			},
+			actionMethods : {
+				create: 'POST', read: 'POST', update: 'POST', destroy: 'POST'
+			},
+			reader: {
+				type: 'json',
+				totalProperty: 'totalCount',
+				rootProperty: 'data'
+			}
+		},
+		autoLoad:false
+	});
+	var risk_defect_summary_plan_combo = Ext.create('Ext.form.ComboBox', {
+		anchor: '100%',
+		fieldLabel: Otm.tc_plan,
+		id: 'risk_defect_summary_plan_combo',
+		triggerAction	: 'all',
+		forceSelection	: true,
+		editable		: false,
+		displayField	: 'text',
+		valueField		: 'tp_seq',
+		allowBlank		: false,
+		queryMode		: 'local',
+		store			: risk_defect_summary_plan_store,
+		listeners: {			
+			change : function(combo,newValue,oldValue,e){
+				risk_defect_summary_store.load({params:{pr_seq:'<?=$project_seq?>',tp_seq:newValue}});
+			}
+		}
+	});
+	risk_defect_summary_plan_store.load({
+		callback: function(r,options,success){			
+			risk_defect_summary_plan_combo.setValue(r[0].data.tp_seq);
+		}
+	});
+	
+
+	var risk_defect_summary_store = Ext.create('Ext.data.Store', {
+		fields:['name','field1','field2'],
+		id:'risk_defect_summary_store',
+		proxy: {
+			type	: 'ajax',
+			url		: './index.php/Plugin_view/report/get_risk_defect_summary',
+			extraParams: {
+				pr_seq : <?=$project_seq?>
+			},
+			actionMethods: {
+				create: 'POST', read: 'POST', update: 'POST', destroy: 'POST'
+			},
+			reader: {
+				type: 'json',
+				totalProperty: 'totalCount',
+				rootProperty: 'data'
+			}
+		},
+		autoLoad:false
+	});
+
+	var column = new Array();
+	column.push({xtype: 'rownumberer',width: 30,sortable: false});
+	column.push({header: Otm.report.risarea, dataIndex: 'name', align:'left', sortable: true, width: 150});
+	column.push({header: Otm.com_all+''+Otm.def, dataIndex: 'total_cnt', align:'center', sortable: false, width: 150});
+	column.push({header: Otm.rep_open_defect, dataIndex: 'open_cnt', align:'center', sortable: false, width: 150});
+	column.push({header: Otm.rep_close_defect, dataIndex: 'close_cnt', align:'center', sortable: false, width: 150});
+	
+
+	var risk_defect_summary_grid = Ext.create("Ext.grid.Panel",{
+		id:'risk_defect_summary_grid',
+		store:risk_defect_summary_store,
+		autoScroll: true,
+		border:false,
+		columns:column
+	});
+
+	var risk_defect_summary_panel = Ext.create("Ext.panel.Panel",{
+		border:false,
+		id:'risk_defect_summary_panel',
+		layout: 'vbox',
+		pack: 'start',
+		align: 'stretch',
+		items:[{
+			xtype:'panel',
+			width:'100%',border:false,
+			flex:2,layout:'fit',bodyStyle:'padding:20px',
+			items:[get_bar_chart2(risk_defect_summary_store)]
+		},{
+			xtype:'panel',layout:'fit',
+			width:'100%',border:true,
+			flex:1,
+			items:[risk_defect_summary_grid]
+		}],
+		tbar:[risk_defect_summary_plan_combo,'->',{
+			xtype:'button',
+			text:Otm.rep_data_table,
+			handler:function(btn){
+				var datas = risk_defect_summary_store.proxy.reader.rawData.data;				
+				get_html_grid_win(Ext.getCmp(add_panel_id).title,column,datas);
+			}
+		},'-',{
+			xtype:'button',
+			text:Otm.com_export,
+			handler:function(btn){
+				var tp_seq = Ext.getCmp("risk_defect_summary_plan_combo").getValue();
+				export_data('plugin/report/report_export_v1','project_seq=<?=$project_seq?>&report_type=risk_defect_summary_grid&tp_seq='+tp_seq);
+			}
+		}]	
+	});	
+	
+	return risk_defect_summary_panel;	
+}
+
+function get_risk_tcresult_summary(add_panel_id)
+{
+	var risk_tcresult_summary_plan_store = Ext.create('Ext.data.Store', {
+		fields:['pr_seq','tp_seq','text'],
+		proxy: {
+			type	: 'ajax',
+			url		: './index.php/Plugin_view/testcase/plan_list',
+			extraParams: {
+				pr_seq : <?=$project_seq?>
+			},
+			actionMethods : {
+				create: 'POST', read: 'POST', update: 'POST', destroy: 'POST'
+			},
+			reader: {
+				type: 'json',
+				totalProperty: 'totalCount',
+				rootProperty: 'data'
+			}
+		},
+		autoLoad:false
+	});
+	var risk_tcresult_summary_plan_combo = Ext.create('Ext.form.ComboBox', {
+		anchor: '100%',
+		fieldLabel: Otm.tc_plan,
+		id: 'risk_tcresult_summary_plan_combo',
+		triggerAction	: 'all',
+		forceSelection	: true,
+		editable		: false,
+		displayField	: 'text',
+		valueField		: 'tp_seq',
+		allowBlank		: false,
+		queryMode		: 'local',
+		store			: risk_tcresult_summary_plan_store,
+		listeners: {			
+			change : function(combo,newValue,oldValue,e){
+				risk_tcresult_summary_store.load({params:{pr_seq:'<?=$project_seq?>',tp_seq:newValue}});
+			}
+		}
+	});
+	risk_tcresult_summary_plan_store.load({
+		callback: function(r,options,success){			
+			risk_tcresult_summary_plan_combo.setValue(r[0].data.tp_seq);
+		}
+	});
+
+
+	var risk_tcresult_summary_store = Ext.create('Ext.data.Store', {
+		fields:['name','field1','field2'],
+		id:'risk_tcresult_summary_store',
+		proxy: {
+			type	: 'ajax',
+			url		: './index.php/Plugin_view/report/get_risk_tcresult_summary',
+			extraParams: {
+				pr_seq : <?=$project_seq?>
+			},
+			actionMethods: {
+				create: 'POST', read: 'POST', update: 'POST', destroy: 'POST'
+			},
+			reader: {
+				type: 'json',
+				totalProperty: 'totalCount',
+				rootProperty: 'data'
+			}
+		},
+		autoLoad:false
+	});
+
+	var column = new Array();
+	column.push({xtype: 'rownumberer',width: 30,sortable: false});
+	column.push({header: Otm.report.risarea, dataIndex: 'name', align:'left', sortable: true, width: 150});
+	column.push({header: Otm.com_link+''+Otm.tc, dataIndex: 'total_cnt', align:'left', sortable: true, width: 150});
+	column.push({header: Otm.tc_execution+''+Otm.tc, dataIndex: 'close_cnt', align:'left', sortable: true, width: 150});
+
+	
+
+	var risk_tcresult_summary_grid = Ext.create("Ext.grid.Panel",{
+		id:'risk_tcresult_summary_grid',
+		store:risk_tcresult_summary_store,
+		autoScroll: true,
+		border:false,
+		columns:column
+	});
+
+	var risk_tcresult_summary_panel = Ext.create("Ext.panel.Panel",{
+		border:false,
+		id:'risk_tcresult_summary_panel',
+		layout: 'vbox',
+		pack: 'start',
+		align: 'stretch',
+		items:[{
+			xtype:'panel',
+			width:'100%',border:false,
+			flex:2,layout:'fit',bodyStyle:'padding:20px',
+			items:[get_bar_chart2(risk_tcresult_summary_store)]
+		},{
+			xtype:'panel',layout:'fit',
+			width:'100%',border:true,
+			flex:1,
+			items:[risk_tcresult_summary_grid]
+		}],
+		tbar:[risk_tcresult_summary_plan_combo,'->',{
+			xtype:'button',
+			text:Otm.rep_data_table,
+			handler:function(btn){
+				var datas = risk_tcresult_summary_store.proxy.reader.rawData.data;				
+				get_html_grid_win(Ext.getCmp(add_panel_id).title,column,datas);
+			}
+		},'-',{
+			xtype:'button',
+			text:Otm.com_export,
+			handler:function(btn){
+				var tp_seq = Ext.getCmp("risk_tcresult_summary_plan_combo").getValue();
+				export_data('plugin/report/report_export_v1','project_seq=<?=$project_seq?>&report_type=risk_tcresult_summary_grid&tp_seq='+tp_seq);
+			}
+		}]
+	});
+	
+	return risk_tcresult_summary_panel;
+}
+
+function get_risk_defect_info(add_panel_id)
+{
+	var risk_defect_info_plan_store = Ext.create('Ext.data.Store', {
+		fields:['pr_seq','tp_seq','text'],
+		proxy: {
+			type	: 'ajax',
+			url		: './index.php/Plugin_view/testcase/plan_list',
+			extraParams: {
+				pr_seq : <?=$project_seq?>
+			},
+			actionMethods : {
+				create: 'POST', read: 'POST', update: 'POST', destroy: 'POST'
+			},
+			reader: {
+				type: 'json',
+				totalProperty: 'totalCount',
+				rootProperty: 'data'
+			}
+		},
+		autoLoad:false
+	});
+	var risk_defect_info_plan_combo = Ext.create('Ext.form.ComboBox', {
+		anchor: '100%',
+		fieldLabel: Otm.tc_plan,
+		id: 'risk_defect_info_plan_combo',
+		triggerAction	: 'all',
+		forceSelection	: true,
+		editable		: false,
+		displayField	: 'text',
+		valueField		: 'tp_seq',
+		allowBlank		: false,
+		queryMode		: 'local',
+		store			: risk_defect_info_plan_store,
+		listeners: {			
+			change : function(combo,newValue,oldValue,e){
+				risk_defect_into_store.load({params:{pr_seq:'<?=$project_seq?>',tp_seq:newValue}});
+			}
+		}
+	});
+	risk_defect_info_plan_store.load({
+		callback: function(r,options,success){			
+			risk_defect_info_plan_combo.setValue(r[0].data.tp_seq);
+		}
+	});
+
+
+	var risk_defect_into_store = Ext.create('Ext.data.Store', {
+		fields:['name','field1','field2'],
+		id:'risk_defect_into_store',
+		proxy: {
+			type	: 'ajax',
+			url		: './index.php/Plugin_view/report/get_risk_defect_info',
+			extraParams: {
+				pr_seq : <?=$project_seq?>
+			},
+			actionMethods: {
+				create: 'POST', read: 'POST', update: 'POST', destroy: 'POST'
+			},
+			reader: {
+				type: 'json',
+				totalProperty: 'totalCount',
+				rootProperty: 'data'
+			}
+		},
+		groupField: 'risk_area',
+		autoLoad:false
+	});
+
+	var column = new Array();
+	column.push({xtype: 'rownumberer',width: 30,sortable: false});
+	column.push({header: Otm.def, dataIndex: 'df_subject', align:'left', sortable: true, flex:1});
+	column.push({header: Otm.com_status, dataIndex: 'df_status', align:'center', sortable: true, width: 80});
+	column.push({header: Otm.com_user, dataIndex: 'df_author', align:'center', sortable: true, width: 80});
+	column.push({header: Otm.com_creator, dataIndex: 'df_writer', align:'center', sortable: true, width: 80});
+	column.push({header: Otm.com_date, dataIndex: 'df_regdate', align:'center', sortable: true, width: 80});
+
+
+	var risk_defect_into_panel = {
+		layout: 'fit',
+		border:false,
+		id:'risk_defect_into_panel',
+		xtype : 'grid',
+		store:risk_defect_into_store,		
+		features: [{
+			ftype: 'grouping',
+			startCollapsed: false,
+			groupHeaderTpl: '{name} {rows.length} Item{[values.rows.length > 1 ? "s" : ""]}'
+		}],
+		columns:column,
+		tbar:[risk_defect_info_plan_combo,'->',{
+			xtype:'button',
+			text:Otm.rep_data_table,
+			handler:function(btn){
+				var datas = "";
+				if(risk_defect_into_store.data.length > 0){
+					datas = risk_defect_into_store.proxy.reader.rawData.data;
+				}
+				get_html_grid_win(Ext.getCmp(add_panel_id).title,column,datas);
+			}
+		},'-',{
+			xtype:'button',
+			text:Otm.com_export,
+			handler:function(btn){
+				var tp_seq = Ext.getCmp("risk_defect_info_plan_combo").getValue();
+				export_data('plugin/report/report_export_v1','project_seq=<?=$project_seq?>&report_type=risk_defect_into_panel&tp_seq='+tp_seq);
+			}
+		}]
+	};
+	
+	return risk_defect_into_panel;
+}
+
+
+
+
 function get_defect_dashboard_panel(add_panel_id)
 {
 	var defect_dashboard_plan_store = Ext.create('Ext.data.Store', {
@@ -1973,22 +2382,98 @@ Ext.onReady(function(){
 				border:false,
 				items:[{
 					title : Otm.rep_plantestcase_result_summary,
-					layout:'fit',
+					layout:'fit',is_show : true,
 					id:'rep_plantestcase_result_summary',
 					items:[get_plantestcase_result_summary('rep_plantestcase_result_summary')]
 				},{
 					title : Otm.rep_alltestcase_result,
-					layout:'fit',
+					layout:'fit',is_show : false,
 					id:'rep_alltestcase_result',
-					items:[get_alltestcase_result_panel('rep_alltestcase_result')]
+					items:[]/*get_alltestcase_result_panel('rep_alltestcase_result')*/
 				},{
 					title : Otm.rep_plantestcase_result,
-					layout:'fit',
+					layout:'fit',is_show : false,
 					id:'rep_plantestcase_result',
-					items:[get_plantestcase_result_panel('rep_plantestcase_result')]
-				}]
+					items:[]/*get_plantestcase_result_panel('rep_plantestcase_result')*/
+				}],
+				listeners: {
+					tabchange:function(t,e){
+						switch(e.id){
+							case "rep_alltestcase_result":
+								if(this.items.items[1].is_show != true){
+									this.items.items[1].add(get_alltestcase_result_panel('rep_alltestcase_result'));
+									this.items.items[1].is_show = true;
+								}
+							break;
+							case "rep_plantestcase_result":
+								if(this.items.items[2].is_show != true){
+									this.items.items[2].add(get_plantestcase_result_panel('rep_plantestcase_result'));
+									this.items.items[2].is_show = true;
+								}
+							break;
+						}
+					}
+				}
 			});
-
+			var report_risk_tab = Ext.create("Ext.tab.Panel",{
+				layout:'fit',
+				id :'report_risk_tab',
+				activeTab:0,
+				border:false,
+				items:[{
+					title : Otm.report.risk_defect_summary,
+					layout:'fit',is_show : false,
+					id:'rep_risk_defect_summary',
+					items:[]
+				},{
+					title : Otm.report.risk_tcresult_summary,
+					layout:'fit',is_show : false,
+					id:'rep_risk_tcresult_summary',
+					items:[]
+				},{
+					title : Otm.report.risk_defect_into,
+					layout:'fit',is_show : false,
+					id:'rep_risk_defect_into',
+					items:[]
+				}],
+				defaults: {
+					listeners: {						
+						activate: function(t, e) {							
+							if(e.id == undefined){
+								if(report_risk_tab.items.items[0].is_show != true){
+									report_risk_tab.items.items[0].add(get_risk_defect_summary('rep_risk_defect_summary'));
+									report_risk_tab.items.items[0].is_show = true;
+								}
+							}							
+						}
+					}
+				},
+				listeners: {	
+					tabchange:function(t,e){						
+						switch(e.id){
+							case "rep_risk_tcresult_summary"://2번째
+								if(report_risk_tab.items.items[1].is_show != true){
+									report_risk_tab.items.items[1].add(get_risk_tcresult_summary('rep_risk_tcresult_summary'));
+									report_risk_tab.items.items[1].is_show = true;
+								}
+							break;
+							case "rep_risk_defect_into"://3번째
+								if(report_risk_tab.items.items[2].is_show != true){
+									report_risk_tab.items.items[2].add(get_risk_defect_info('rep_risk_defect_into'));
+									report_risk_tab.items.items[2].is_show = true;
+								}
+							break;
+							default://1번째
+								if(report_risk_tab.items.items[0].is_show != true){
+									report_risk_tab.items.items[0].add(get_risk_defect_summary('rep_risk_defect_summary'));
+									report_risk_tab.items.items[0].is_show = true;
+								}
+							break;
+						}
+					}
+				}
+			});
+			
 			var report_defect_tab = Ext.create("Ext.tab.Panel",{
 				layout:'fit',
 				id :'report_defect_tab',
@@ -1996,25 +2481,67 @@ Ext.onReady(function(){
 				border:false,
 				items:[{
 					title : Otm.rep_defect_dashboard,
-					layout:'fit',
+					layout:'fit',is_show : false,
 					id:'rep_defect_dashboard',
-					items:[get_defect_dashboard_panel('rep_defect_dashboard')]
+					items:[]/*get_defect_dashboard_panel('rep_defect_dashboard')*/					
 				},{
 					title : Otm.rep_defect_scurve,
-					layout:'fit',
+					layout:'fit',is_show : false,
 					id:'rep_defect_scurve',
-					items:[get_defect_scurve_grid('rep_defect_scurve','month')]
+					items:[]///*get_defect_scurve_grid('rep_defect_scurve','month')*/					
 				},{
 					title : Otm.rep_suite_defect_distribution,
-					layout:'fit',
+					layout:'fit',is_show : false,
 					id:'rep_suite_defect_distribution',
-					items:[get_suite_defect_distribution_grid('rep_suite_defect_distribution')]
+					items:[]/*get_suite_defect_distribution_grid('rep_suite_defect_distribution')*/					
 				},{
 					title : Otm.rep_defect_list,
-					layout:'fit',
+					layout:'fit',is_show : false,
 					id:'rep_defect_list',
-					items:[get_defect_list_grid('rep_defect_list')]
-				}]
+					items:[]/*get_defect_list_grid('rep_defect_list')*/					
+				}],
+				defaults: {
+					listeners: {
+						activate: function(t, e) {
+							if(e.id == undefined){
+								if(report_defect_tab.items.items[0].is_show != true){
+									report_defect_tab.items.items[0].add(get_defect_dashboard_panel('rep_defect_dashboard'));
+									report_defect_tab.items.items[0].is_show = true;
+								}
+							}
+						}
+					}
+				},
+				listeners: {	
+					tabchange:function(t,e){
+						switch(e.id){
+							case "rep_defect_scurve":
+								if(report_defect_tab.items.items[1].is_show != true){
+									report_defect_tab.items.items[1].add(get_defect_scurve_grid('rep_defect_scurve','month'));
+									report_defect_tab.items.items[1].is_show = true;
+								}
+							break;
+							case "rep_suite_defect_distribution":
+								if(report_defect_tab.items.items[2].is_show != true){
+									report_defect_tab.items.items[2].add(get_suite_defect_distribution_grid('rep_suite_defect_distribution'));
+									report_defect_tab.items.items[2].is_show = true;
+								}
+							break;
+							case "rep_defect_list":
+								if(report_defect_tab.items.items[3].is_show != true){
+									report_defect_tab.items.items[3].add(get_defect_list_grid('rep_defect_list'));
+									report_defect_tab.items.items[3].is_show = true;
+								}
+							break;
+							default:
+								if(report_defect_tab.items.items[0].is_show != true){
+									report_defect_tab.items.items[0].add(get_defect_dashboard_panel('rep_defect_dashboard'));
+									report_defect_tab.items.items[0].is_show = true;
+								}
+							break;
+						}
+					}
+				}
 			});
 
 			var report_ViewPanel = Ext.create("Ext.tab.Panel",{
@@ -2024,13 +2551,38 @@ Ext.onReady(function(){
 				border:false,
 				items:[{
 					title : Otm.rep_testprogress,
-					layout:'fit',
+					id:'report_view_testprogress',
+					layout:'fit',is_show : true,
 					items:[report_testprogress_tab]
 				},{
 					title: Otm.def,
-					layout:'fit',
-					items:[report_defect_tab]
-				}]
+					id:'report_view_def',
+					layout:'fit',is_show : false,
+					items:[]//report_defect_tab
+				},{
+					title: Otm.report.risk,
+					id:'report_view_risk',
+					layout:'fit',is_show : false,
+					items:[]
+				}],
+				listeners: {
+					tabchange:function(t,e ){
+						switch(e.id){
+							case "report_view_def":
+								if(this.items.items[1].is_show != true){
+									this.items.items[1].add(report_defect_tab);
+									this.items.items[1].is_show = true;
+								}
+							break;
+							case "report_view_risk":
+								if(this.items.items[2].is_show != true){
+									this.items.items[2].add(report_risk_tab);
+									this.items.items[2].is_show = true;
+								}
+							break;
+						}
+					}
+				}
 			});
 
 			Ext.getCmp('report').removeAll();
@@ -2039,7 +2591,7 @@ Ext.onReady(function(){
 			Ext.getCmp('report').add(report_ViewPanel);
 			Ext.getCmp('report').doLayout(true,false);
 
-			Ext.getCmp("suite_defect_distribution_plan_combo").getStore().load();
+			//Ext.getCmp("suite_defect_distribution_plan_combo").getStore().load();
 		}
 	});
 });

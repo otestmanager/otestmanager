@@ -81,6 +81,7 @@ switch (ENVIRONMENT)
 		{
 			error_reporting(E_ALL & ~E_NOTICE & ~E_STRICT & ~E_USER_NOTICE);
 		}
+		error_reporting(0);
 		break;
 	default:
 		header('HTTP/1.1 503 Service Unavailable.', TRUE, 503);

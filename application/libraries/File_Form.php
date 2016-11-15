@@ -10,7 +10,7 @@ class File_Form extends CI_Model {
 		$this->load->database();
 	}
 
-	public function file_chk($data)
+	public function file_chk()
 	{
 		$default_max_size = 104857600;//  20971520; //(20M)
 
@@ -36,10 +36,6 @@ class File_Form extends CI_Model {
 		}else{
 			return false;
 		}
-	}
-	private function set_thumb_image($data)
-	{
-
 	}
 
 	public function file_upload($data)
@@ -95,7 +91,7 @@ class File_Form extends CI_Model {
 		$file_width = 0;
 		$file_height = 0;
 		if($this->is_image($file_type)){
-			$image_url = $directory.$source;
+			//$image_url = $directory.$source;
 			$size = getimagesize($directory);
 			$file_width = $size[0];
 			$file_height = $size[1];
@@ -117,7 +113,7 @@ class File_Form extends CI_Model {
 		$insert_array['regdate'] = $date;
 
 		$this->db->insert('otm_file', $insert_array);
-		$result = $this->db->insert_id();
+		//$result = $this->db->insert_id();
 		return;
 	}
 
@@ -139,7 +135,7 @@ class File_Form extends CI_Model {
 		$filepath = addslashes($filepath);
 		$filepath = trim(mb_convert_encoding($filepath,"euckr","utf-8"));
 
-		$original = trim(mb_convert_encoding($arr[0]->of_source,"euckr","utf-8"));
+		//$original = trim(mb_convert_encoding($arr[0]->of_source,"euckr","utf-8"));
 
 		if (file_exists($filepath)) {
 			print "{success:true,msg:'ok'}";
@@ -171,7 +167,7 @@ class File_Form extends CI_Model {
 			$original = trim(mb_convert_encoding($arr[0]->of_source,"euckr","utf-8"));
 
 			if (file_exists($filepath)) {
-				if(eregi("msie", $_SERVER[HTTP_USER_AGENT]) && eregi("5\.5", $_SERVER[HTTP_USER_AGENT])) {
+				if(preg_match("/msie/i", $_SERVER[HTTP_USER_AGENT]) && preg_match("/5\.5/i", $_SERVER[HTTP_USER_AGENT])) {
 					header("content-type: doesn/matter");
 					header("content-length: ".filesize("$filepath"));
 					header("content-disposition: attachment; filename=\"$original\"");

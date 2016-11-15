@@ -276,16 +276,16 @@ class Testcase extends Controller {
 
 
 		if(isset($role['tc_edit_all']) || $this->session->userdata('mb_is_admin') === 'Y'){
-			$v_role = 'all';
+			//$v_role = 'all';
 		}else if(isset($role['tc_edit'])){
-			$v_role = 'writer';
+			//$v_role = 'writer';
 			if($this->session->userdata('mb_email') !== $this->input->post('writer',true))
 			{
 				print "{success:false,msg:'No authority. edit testcase'}";
 				exit;
 			}
 		}else{
-			$v_role = '';
+			//$v_role = '';
 			print "{success:false,msg:'No authority. edit testcase'}";
 			exit;
 		}
@@ -323,9 +323,9 @@ class Testcase extends Controller {
 		$role = $this->testcase_role();
 
 		if(isset($role['tc_delete_all']) || $this->session->userdata('mb_is_admin') === 'Y'){
-			$v_role = 'all';
+			//$v_role = 'all';
 		}else if(isset($role['tc_delete'])){
-			$v_role = 'writer';
+			//$v_role = 'writer';
 
 			$writer = json_decode($this->input->post('writer', TRUE));
 			$return_list = '';
@@ -341,7 +341,7 @@ class Testcase extends Controller {
 				exit;
 			}
 		}else{
-			$v_role = '';
+			//$v_role = '';
 			print "{success:false,msg:'No authority. delete testcase.'}";
 			exit;
 		}

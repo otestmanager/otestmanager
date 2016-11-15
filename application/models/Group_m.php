@@ -92,7 +92,7 @@ class Group_m extends CI_Model
 		$data['last_update'] = '';
 
 		$this->db->insert('otm_group', $data);
-		$result = $this->db->insert_id();
+		//$result = $this->db->insert_id();
 		return 'ok';
 	}
 
@@ -238,7 +238,7 @@ class Group_m extends CI_Model
 			switch($data['function'])
 			{
 				case 'group_list_export':
-					return $this->group_list_export($data);
+					return $this->group_list_export();
 					break;
 			}
 		}
@@ -251,7 +251,7 @@ class Group_m extends CI_Model
 	*
 	* @return array
 	*/
-	function group_list_export($data)
+	function group_list_export()
 	{
 		$temp_arr = array();
 		$str_sql = "

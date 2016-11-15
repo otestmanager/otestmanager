@@ -96,6 +96,27 @@ class Riskanalysis_m extends CI_Model {
 
 
 	/**
+	* Function get_member_name
+	*
+	* @param array $data Post Data.
+	*
+	* @return array
+	*/
+	function get_member_name()
+	{
+		$member_arr = array();
+		$this->db->from('otm_member');
+		$query = $this->db->get();
+		foreach ($query->result() as $temp_row)
+		{
+			$member_arr[$temp_row->mb_email] = $temp_row->mb_name;
+		}
+
+		return $member_arr;
+	}
+
+
+	/**
 	* Function is_custom_value
 	*
 	* @param array $data Post Data.
@@ -103,12 +124,20 @@ class Riskanalysis_m extends CI_Model {
 	* @return integer
 	*/
 	function is_custom_value($ri_seq,$form_seq){
+		/*
 		$str_sql = "select count(*) as cnt from otm_riskitem_custom_value
 					where
 						otm_riskitem_ri_seq='$ri_seq' and
 						otm_project_customform_pc_seq='$form_seq'
 					";
 		$query = $this->db->query($str_sql);
+		*/
+
+		$this->db->select('count(*) as cnt');
+		$this->db->where('otm_riskitem_ri_seq',$ri_seq);
+		$this->db->where('otm_project_customform_pc_seq',$form_seq);		
+		$query = $this->db->get('otm_riskitem_custom_value');
+
 		$tmp_arr="";
 		foreach ($query->result() as $row)
 		{
@@ -151,6 +180,139 @@ class Riskanalysis_m extends CI_Model {
 	}
 
 
+	/*
+	*******************************
+	* Riskanalysis Chart
+	*******************************
+	*/
+
+	/**
+	* Function riskanalysis_riskarea_riskitem_chart
+	*
+	* @return string
+	*/
+	function riskanalysis_riskarea_riskitem_chart($data)
+	{
+		$pr_seq = $data['pr_seq'];
+
+		$riskarea = array();
+		$riskarea = $this->code_list(array('pr_seq'=>$pr_seq, 'type'=>'riskarea'));
+
+		$riskpoint = array();
+		$riskpoint_arr = $this->code_list(array('pr_seq'=>$pr_seq, 'type'=>'riskpoint'));
+		for($i=0; $i<count($riskpoint_arr); $i++){
+			$riskpoint[$riskpoint_arr[$i]->pco_seq] = $riskpoint_arr[$i]->pco_default_value;
+		}
+
+		$this->db->where('otm_project_pr_seq', $data['pr_seq']);
+		$this->db->order_by('rf_type desc, rf_ord asc');
+		$query = $this->db->get('otm_riskfactor');
+		$riskfactor = $query->result();
+
+		$riskitem_factor_vlaue = array();
+		$query = $this->db->get('otm_riskitem_factor_value');
+		foreach ($query->result() as $temp_row)
+		{
+			$riskitem_factor_vlaue[$temp_row->otm_riskitem_ri_seq][$temp_row->otm_riskfactor_rf_seq] = $temp_row;
+		}
+		
+		// riskitem discussion data
+		$return_arr = array();
+		$this->db->select('ri_seq,ri_subject');
+		$this->db->where('otm_project_pr_seq', $data['pr_seq']);
+		//$this->db->order_by('ri_seq asc');
+		$query = $this->db->get('otm_riskitem');
+		foreach ($query->result() as $temp_row)
+		{		
+			$likelihood_point = 0;
+			$impat_point = 0;
+
+			$temp_arr = array();
+
+			foreach ($riskfactor as $riskfactor_row)
+			{
+				if($riskitem_factor_vlaue[$temp_row->ri_seq]){
+					if($riskitem_factor_vlaue[$temp_row->ri_seq][$riskfactor_row->rf_seq]){
+						//input value
+						if($riskitem_factor_vlaue[$temp_row->ri_seq][$riskfactor_row->rf_seq]->rifv_value > 0){
+
+							//point sum
+							if($riskfactor_row->rf_type == 'likelihood'){
+								$likelihood_point += $riskpoint[$riskitem_factor_vlaue[$temp_row->ri_seq][$riskfactor_row->rf_seq]->rifv_value] * 1;
+							}else if($riskfactor_row->rf_type == 'impact'){
+								$impat_point += ($riskpoint[$riskitem_factor_vlaue[$temp_row->ri_seq][$riskfactor_row->rf_seq]->rifv_value]) * 1;
+							}
+						}
+					}
+				}
+			}
+
+			$temp_arr['final_point'] = $likelihood_point * $impat_point;
+			$temp_arr['riskarea'] = '';
+			foreach ($riskarea as $riskarea_row)
+			{
+				$riskarea_row->name = $riskarea_row->pco_name;
+
+				if($temp_arr['riskarea'] == ''){
+					$check_point = $riskarea_row->pco_default_value * 1;
+
+					if($check_point <= $temp_arr['final_point']){
+						$temp_arr['riskarea'] = $riskarea_row->pco_name;
+						if(!$riskarea_row->cnt){
+							$riskarea_row->cnt = 1;
+						}else{
+							$riskarea_row->cnt++;
+						}
+					}				
+				}
+			}		
+			//$return_arr[] = $temp_arr;
+		}
+
+		return $riskarea;
+		//return $return_arr;
+	}
+
+
+	/**
+	* Function riskanalysis_riskitem_requirement_chart
+	*
+	* @return string
+	*/
+	function riskanalysis_riskitem_requirement_chart($data)
+	{
+		$pr_seq = $data['pr_seq'];
+
+		$req_list = array();
+		$this->db->select('otm_riskitem_ri_seq as ri_seq, count(*) as cnt');
+		$this->db->join('otm_requirement as req','rrm.otm_requirement_req_seq=req.req_seq','left');
+		$this->db->where('req.req_seq !=','');
+		$this->db->group_by('otm_riskitem_ri_seq');
+		$query = $this->db->get('otm_risk_req_mapping as rrm');
+		foreach ($query->result() as $temp_row)
+		{
+			$req_list[$temp_row->ri_seq] = $temp_row->cnt;
+		}
+
+		$temp_arr = array();
+		$this->db->where('otm_project_pr_seq', $data['pr_seq']);
+		$this->db->order_by('ri_seq asc');
+		$query = $this->db->get('otm_riskitem');
+		foreach ($query->result() as $temp_row)
+		{
+			$temp_row->name = $temp_row->ri_subject;
+			$temp_row->cnt = $req_list[$temp_row->ri_seq];
+			$temp_arr[] = $temp_row;
+		}
+		return $temp_arr;
+	}
+	/*
+	*******************************
+	* END : Riskanalysis Chart
+	*******************************
+	*/
+
+
 	/**
 	*******************************
 	*	Riskitem 
@@ -167,13 +329,37 @@ class Riskanalysis_m extends CI_Model {
 	*/
 	function riskitem_list($data)
 	{
-		$temp_arr = array();
+		$req_list = array();
+		$this->db->select('otm_riskitem_ri_seq as ri_seq, count(*) as cnt');
+		$this->db->join('otm_requirement as req','rrm.otm_requirement_req_seq=req.req_seq','left');
+		$this->db->where('req.req_seq !=','');
+		$this->db->group_by('otm_riskitem_ri_seq');
+		$query = $this->db->get('otm_risk_req_mapping as rrm');
+		foreach ($query->result() as $temp_row)
+		{
+			$req_list[$temp_row->ri_seq] = $temp_row->cnt;
+		}
 
+		$tc_list = array();
+		$this->db->select('otm_riskitem_ri_seq as ri_seq, count(*) as cnt');
+		$this->db->join('otm_testcase as tc','rtm.otm_testcase_tc_seq=tc.tc_seq','left');
+		$this->db->where('tc.tc_seq !=','');
+		$this->db->group_by('otm_riskitem_ri_seq');
+		$query = $this->db->get('otm_risk_tc_mapping as rtm');
+		foreach ($query->result() as $temp_row)
+		{
+			$tc_list[$temp_row->ri_seq] = $temp_row->cnt;
+		}
+
+
+		$temp_arr = array();
 		$this->db->where('otm_project_pr_seq', $data['pr_seq']);
 		$this->db->order_by('ri_seq asc');
 		$query = $this->db->get('otm_riskitem');
 		foreach ($query->result() as $temp_row)
 		{
+			$temp_row->link_req_cnt = $req_list[$temp_row->ri_seq];
+			$temp_row->link_tc_cnt = $tc_list[$temp_row->ri_seq];
 			$temp_arr[] = $temp_row;
 		}
 		return $temp_arr;
@@ -192,26 +378,23 @@ class Riskanalysis_m extends CI_Model {
 		$pr_seq	= $data['pr_seq'];
 		$ri_seq	= $data['ri_seq'];
 
+		$member_name = $this->get_member_name();
+
 		//$date=date('Y-m-d H:i:s');
 		//$writer = $this->session->userdata('mb_email');
 
 		//return "{success:true}";
 
-		$arr = "";
-		$str_sql = "
-			select
-				a.*
-			from
-				otm_riskitem as a
-			where ri_seq='$ri_seq'			
-		";
-
-		$query = $this->db->query($str_sql);
+		$return_array = "";
+		$this->db->where('ri_seq',$ri_seq);
+		$query = $this->db->get('otm_riskitem');
 		foreach ($query->result() as $row)
 		{
-			$arr = $row;
+			$row->writer = $member_name[$row->writer];
+			$return_array = $row;
 		}
 
+		/*
 		$tmp_arr = "";
 		$str_sql = "select
 						otm_project_customform_pc_seq as seq,
@@ -220,27 +403,46 @@ class Riskanalysis_m extends CI_Model {
 					from
 					otm_riskitem_custom_value
 					where otm_riskitem_ri_seq='$ri_seq'
-		";
+		";		
 		$query = $this->db->query($str_sql);
+		
+		$this->db->select('otm_project_customform_pc_seq as seq,
+						rcv_custom_type as formtype,
+						rcv_custom_value as value');
+		$this->db->where('otm_riskitem_ri_seq',$ri_seq);
+		$query = $this->db->get('otm_riskitem_custom_value');
 		foreach ($query->result() as $row)
 		{
 			$tmp_arr[] = $row;
 		}
 
 		$arr->df_customform = json_encode($tmp_arr);
+		*/
+		$this->db->select('otm_project_customform_pc_seq as seq,
+						rcv_custom_type as formtype,
+						rcv_custom_value as value');
+		$this->db->where('otm_riskitem_ri_seq',$ri_seq);
+		$query = $this->db->get('otm_riskitem_custom_value');
+		$return_array->df_customform = json_encode($query->result_array());
 
 
 		/* attached file */
 		$file_arr = "";
-		$str_sql = "select * from otm_file where otm_project_pr_seq='$pr_seq' and otm_category='ID_RISK' and target_seq='$ri_seq' order by of_no asc";
-		$query = $this->db->query($str_sql);
+		//$str_sql = "select * from otm_file where otm_project_pr_seq='$pr_seq' and otm_category='ID_RISK' and target_seq='$ri_seq' order by of_no asc";
+		//$query = $this->db->query($str_sql);
+
+		$this->db->where('otm_project_pr_seq',$pr_seq);
+		$this->db->where('otm_category','ID_RISK');
+		$this->db->where('target_seq',$ri_seq);
+		$this->db->order_by('of_no asc');
+		$query = $this->db->get('otm_file');
 		foreach ($query->result() as $row)
 		{
 			$file_arr[] = $row;
 		}
-		$arr->fileform = json_encode($file_arr);
+		$return_array->fileform = json_encode($file_arr);
 
-		return $arr;
+		return $return_array;
 	}
 
 
@@ -436,6 +638,10 @@ class Riskanalysis_m extends CI_Model {
 
 			$delete_array = array('otm_riskitem_ri_seq' => $ri_seq);
 			$this->db->delete('otm_riskitem_custom_value',$delete_array);
+
+			//mapping data delete
+			$this->db->delete('otm_risk_req_mapping',$delete_array);
+			$this->db->delete('otm_risk_tc_mapping',$delete_array);
 		}
 
 		return $result;
@@ -524,7 +730,7 @@ class Riskanalysis_m extends CI_Model {
 
 			foreach ($save_list[$i] as $k=>$v)
 			{	
-				$temp_key = split('_',$k);
+				$temp_key = preg_split('/_/',$k);
 				if($temp_key && ($temp_key[0] == 'likelihood' || $temp_key[0] == 'impact') && $v != ''){
 					$temp_factor_col[$temp_key[1]] = $v;		
 				}
@@ -580,6 +786,30 @@ class Riskanalysis_m extends CI_Model {
 	function riskitem_discussion_result($data)
 	{
 		$pr_seq = $data['pr_seq'];
+
+		$req_list = array();
+		$this->db->select('otm_riskitem_ri_seq as ri_seq, count(*) as cnt');
+		$this->db->join('otm_requirement as req','rrm.otm_requirement_req_seq=req.req_seq','left');
+		$this->db->where('req.req_seq !=','');
+		$this->db->group_by('otm_riskitem_ri_seq');
+		$query = $this->db->get('otm_risk_req_mapping as rrm');
+		foreach ($query->result() as $temp_row)
+		{
+			$req_list[$temp_row->ri_seq] = $temp_row->cnt;
+		}
+
+		$tc_list = array();
+		$this->db->select('otm_riskitem_ri_seq as ri_seq, count(*) as cnt');
+		$this->db->join('otm_testcase as tc','rtm.otm_testcase_tc_seq=tc.tc_seq','left');
+		$this->db->where('tc.tc_seq !=','');
+		$this->db->group_by('otm_riskitem_ri_seq');
+		$query = $this->db->get('otm_risk_tc_mapping as rtm');
+		foreach ($query->result() as $temp_row)
+		{
+			$tc_list[$temp_row->ri_seq] = $temp_row->cnt;
+		}
+
+
 
 		//$temp_arr = array();
 		//return $temp_arr;
@@ -663,15 +893,20 @@ class Riskanalysis_m extends CI_Model {
 				}
 			}
 
-			$temp_arr['risk_req_cnt'] = 0;
-			$temp_arr['risk_tc_cnt'] = 0;
-
+			$temp_arr['risk_req_cnt'] = $req_list[$temp_row->ri_seq];
+			$temp_arr['risk_tc_cnt'] = $tc_list[$temp_row->ri_seq];
 			
 			$return_arr[] = $temp_arr;
 		}
 		return $return_arr;
 	}
 
+
+	/**
+	*******************************
+	*	riskanalysis_requirement
+	*******************************
+	*/
 
 	/**
 	* Function riskanalysis_requirement
@@ -690,13 +925,14 @@ class Riskanalysis_m extends CI_Model {
 		$return_array = array();
 
 		$this->db->select('rrm.*, req.req_subject');
+		$this->db->from('otm_risk_req_mapping as rrm');
 		$this->db->join('otm_requirement as req','req.req_seq = rrm.otm_requirement_req_seq','left');
 		$this->db->where('req.otm_project_pr_seq', $pr_seq);
-		$this->db->where('rrm.otm_requirement_req_seq', $ri_seq);
+		$this->db->where('rrm.otm_riskitem_ri_seq', $ri_seq);
 		$this->db->order_by('rrl_seq asc');
-		$query = $this->db->get('otm_risk_req_mapping as rrm');		
+		$query = $this->db->get();		
 		$link_array = $query->result_array();
-
+		//return $this->db->last_query();
 		switch($type)
 		{
 			case "link":
@@ -748,14 +984,330 @@ class Riskanalysis_m extends CI_Model {
 	*/
 	function riskitem_requirement_link($data)
 	{
-		for($i=0; $i<count($data['req_list']); $i++){
-			$this->db->set('otm_riskitem_ri_seq',	$data['ri_seq']);
-			$this->db->set('otm_requirement_req_seq', $data['req_list'][$i]);
-			$this->db->insert('otm_risk_req_mapping');
+		switch($data['type'])
+		{
+			case "link":
+				for($i=0; $i<count($data['req_list']); $i++){
+					$this->db->set('otm_riskitem_ri_seq',	$data['ri_seq']);
+					$this->db->set('otm_requirement_req_seq', $data['req_list'][$i]);
+					$this->db->insert('otm_risk_req_mapping');
+				}
+				break;
+			case "unlink":
+				for($i=0; $i<count($data['req_list']); $i++){
+					$this->db->where('otm_riskitem_ri_seq',	$data['ri_seq']);
+					$this->db->where('otm_requirement_req_seq', $data['req_list'][$i]);
+					$this->db->delete('otm_risk_req_mapping');
+				}
+				break;
+			default:
+				return false;
+				break;
 		}
 
 		return true;
 	}	
+
+
+	/**
+	*******************************
+	*	riskanalysis_testcase
+	*******************************
+	*/
+
+	/**
+	* Function riskanalysis_testcase_list
+	*
+	* @param array $data Post Data.
+	*
+	* @return array
+	*/
+	function riskanalysis_testcase_list($data)
+	{
+		/*
+		$this->load->model('testcase/testcase_m');
+		$data['tcplan'] = 'backlog_'.$pr_seq;
+		$data['project_seq'] = $pr_seq;
+		$data['role'] = 'all';
+		return $this->testcase_m->testcase_tree_list($data);
+		*/
+
+		//$mb_email = $this->session->userdata('mb_email');
+
+		$temp_arr = array();
+		$node = $data['node'];
+		$node = explode('_', $node);
+		$pr_seq = $data['pr_seq'];
+
+
+		//Member Info
+		$member_name = $this->get_member_name();
+
+		$this->db->join('otm_risk_tc_mapping as rtm','rtm.otm_testcase_tc_seq = tc.tc_seq', 'left');
+
+		if($node[0] !== 'root'){
+			//$this->db->select('tc.*,tc.writer as mb_name');
+			$this->db->from('otm_testcase as tc');
+			$this->db->where('tc.otm_project_pr_seq',$pr_seq);
+			$this->db->where('tc.tc_inp_pid',$data['node']);
+			$this->db->where('tc.tc_is_task','folder');
+			$this->db->order_by('tc_ord asc');
+
+
+			$query = $this->db->get();
+			$i=0;
+			foreach ($query->result() as $temp_row)
+			{
+				$temp_arr[$i]['pr_seq'] = $temp_row->otm_project_pr_seq;
+				$temp_arr[$i]['tc_seq'] = $temp_row->tc_seq;
+				$temp_arr[$i]['pid'] = $temp_row->tc_inp_pid;
+				$temp_arr[$i]['id'] = $temp_row->tc_inp_id;
+				$temp_arr[$i]['out_id'] = $temp_row->tc_out_id;
+				$temp_arr[$i]['text'] = $temp_row->tc_subject;
+				$temp_arr[$i]['type'] = $temp_row->tc_is_task;
+				
+				$temp_link = $temp_row->otm_riskitem_ri_seq;
+				if($temp_link){
+					if($temp_link == $data['ri_seq'])
+					{
+						//$temp_link = true;
+						$temp_arr[$i]['disabled'] = true;
+					}else{
+						//$temp_link = 
+						$temp_arr[$i]['disabled'] = false;
+					}
+				}
+				$temp_arr[$i]['link_seq'] = $temp_link;
+
+
+				//$temp_arr[$i]['writer_name'] = $member_name[$temp_row->mb_name];
+				//$temp_arr[$i]['writer'] = $temp_row->writer;
+				//$temp_arr[$i]['regdate'] = $temp_row->regdate;
+				//$temp_arr[$i]['last_writer'] = $temp_row->last_writer;
+				//$temp_arr[$i]['last_update'] = $temp_row->last_update;
+				//$temp_arr[$i]['leaf'] = ($temp_row->tc_is_task === 'folder')?FALSE:TRUE;
+				$temp_arr[$i]['leaf'] = FALSE;
+				$i++;
+			}
+		}else{
+			
+
+			
+
+			//$this->db->select("tc.*,tc.writer as mb_name");
+			$this->db->from('otm_testcase tc');
+			$this->db->where('tc.otm_project_pr_seq',$pr_seq);
+			$this->db->where('tc.tc_inp_pid','tc_0');
+			$this->db->where('tc.tc_is_task','folder');				
+			$this->db->order_by('tc.tc_ord asc');
+			$query = $this->db->get();
+
+			$i=0;
+			foreach ($query->result() as $temp_row)
+			{
+				$temp_arr[$i]['pr_seq'] = $temp_row->otm_project_pr_seq;
+				$temp_arr[$i]['tc_seq'] = $temp_row->tc_seq;
+				$temp_arr[$i]['pid'] = $temp_row->tc_inp_pid;
+				$temp_arr[$i]['id'] = $temp_row->tc_inp_id;
+				$temp_arr[$i]['out_id'] = $temp_row->tc_out_id;
+				$temp_arr[$i]['text'] = $temp_row->tc_subject;
+				$temp_arr[$i]['type'] = $temp_row->tc_is_task;
+
+				$temp_link = $temp_row->otm_riskitem_ri_seq;
+				if($temp_link){
+					if($temp_link == $data['ri_seq'])
+					{
+						//$temp_link = true;
+						$temp_arr[$i]['disabled'] = true;
+					}else{
+						//$temp_link = 
+						$temp_arr[$i]['disabled'] = false;
+					}
+				}else{
+					$temp_link = '';
+				}
+				$temp_arr[$i]['link_seq'] = $temp_link;
+
+				//$temp_arr[$i]['writer_name'] = $member_name[$temp_row->mb_name];
+				//$temp_arr[$i]['writer'] = $temp_row->writer;
+				//$temp_arr[$i]['regdate'] = $temp_row->regdate;
+				//$temp_arr[$i]['last_writer'] = $temp_row->last_writer;
+				//$temp_arr[$i]['last_update'] = $temp_row->last_update;
+				$temp_arr[$i]['leaf'] = FALSE;
+
+				$i++;
+			}
+
+			/*
+			$return_array[0]['pr_seq'] = $data['pr_seq'];
+			//$return_array[0]['tc_seq'] = '';
+			//$return_array[0]['pid'] = 0;
+			$return_array[0]['id'] = 'tc_0';
+			//$return_array[0]['out_id'] = '';
+			$return_array[0]['text'] = 'Root';
+			$return_array[0]['type'] = 'folder';
+			$return_array[0]['leaf'] = FALSE;
+			$return_array[0]['children'] = $temp_arr;
+
+			return $return_array;
+			*/
+		}
+
+		return $temp_arr;
+	}
+
+
+	/**
+	* Function riskitem_testcase_link
+	*
+	* @param array $data Post Data.
+	*
+	* @return array
+	*/
+	function riskitem_testcase_link($data)
+	{
+		/*
+		$data = array(
+			'type' => $this->input->post_get('type', TRUE),
+			'pr_seq' => $this->input->post_get('pr_seq', TRUE),
+			'ri_seq' => $this->input->post_get('ri_seq', TRUE),
+			'tc_seq' => $this->input->post_get('tc_seq', TRUE),
+			'pid' => $this->input->post_get('pid', TRUE)
+		);
+		*/
+
+		$date=date('Y-m-d H:i:s');
+		$writer = $this->session->userdata('mb_email');
+		$writer_name = $this->session->userdata('mb_name');
+
+		switch($data['type'])
+		{
+			case "add_link":
+				$this->db->where('ri_seq',$data['ri_seq']);
+				$query = $this->db->get('otm_riskitem');
+				$riskitem_info = $query->result();
+				//return $riskitem_info->ri_subject;
+				
+
+
+				$insert_array['otm_project_pr_seq'] = $data['pr_seq'];
+				$insert_array['tc_subject'] = $riskitem_info[0]->ri_subject;//'link test';//$data['tc_subject'];
+				$insert_array['tc_description'] = $riskitem_info[0]->ri_description;//'';//$data['tc_description'];
+				if(isset($data['pid']) && $data['pid'] === 'root') $data['pid'] = 'tc_0';
+				$insert_array['tc_inp_pid'] = ($data['pid'])?$data['pid']:'tc_0';
+
+				$insert_array['writer'] = $writer;
+				$insert_array['regdate'] = $date;
+				$insert_array['last_writer'] = '';
+				$insert_array['last_update'] = '';
+
+				$insert_array['tc_is_task'] = 'folder';
+
+				$this->db->insert('otm_testcase', $insert_array);
+				$tc_seq = $this->db->insert_id();
+
+				$tc_out_id = 'ts_'.$tc_seq;
+				$modify_array['tc_out_id'] = 'ts_'.$tc_seq;
+				$modify_array['tc_inp_id'] = 'ts_'.$tc_seq;
+				$modify_array['tc_ord'] = $tc_seq;
+				$where = array('tc_seq'=>$tc_seq);
+				$this->db->update('otm_testcase', $modify_array, $where);
+
+				$return_data = array();
+				$return_data['pr_seq']		= $data['pr_seq'];
+				$return_data['tc_seq']		= $tc_seq;
+				$return_data['pid']			= $insert_array['tc_inp_pid'];
+				$return_data['id']			= $modify_array['tc_inp_id'];
+				$return_data['out_id']		= $tc_out_id;
+				$return_data['text']		= $insert_array['tc_subject'];
+				$return_data['type']		= 'folder';
+
+				$return_data['link_seq']		= $data['ri_seq'];
+
+				$return_data['leaf']		= false;
+
+				$this->db->set('otm_riskitem_ri_seq',	$data['ri_seq']);
+				$this->db->set('otm_testcase_tc_seq', $tc_seq);
+				$this->db->insert('otm_risk_tc_mapping');
+
+				return "{success:true, data:'".json_encode($return_data)."'}";
+
+				break;
+			case "link":
+
+				$this->db->where('otm_testcase_tc_seq',$data['tc_seq']);
+				$query = $this->db->get('otm_risk_tc_mapping');
+				$check = $query->result_array();
+				
+				if($check){
+					return "{success:true, data:{msg:'연결되어있는 테스트 케이스 입니다.'}}";
+				}
+
+				$this->db->where('tc_seq',$data['tc_seq']);
+				$query = $this->db->get('otm_testcase');
+				$testcase_info = $query->result();
+
+				$return_data = array();
+				$return_data['pr_seq']		= $data['pr_seq'];
+				$return_data['tc_seq']		= $data['tc_seq'];
+				$return_data['pid']			= $testcase_info[0]->tc_inp_pid;
+				$return_data['id']			= $testcase_info[0]->tc_inp_id;
+				$return_data['out_id']		= $testcase_info[0]->tc_out_id;
+				$return_data['text']		= $testcase_info[0]->tc_subject;
+				$return_data['type']		= 'folder';
+
+				$return_data['link_seq']		= $data['ri_seq'];
+
+				$return_data['leaf']		= false;
+
+				$this->db->set('otm_riskitem_ri_seq',	$data['ri_seq']);
+				$this->db->set('otm_testcase_tc_seq', $data['tc_seq']);
+				$this->db->insert('otm_risk_tc_mapping');
+
+				return "{success:true, data:'".json_encode($return_data)."'}";
+				break;
+			case "unlink":
+
+				$this->db->where('otm_testcase_tc_seq',$data['tc_seq']);
+				$query = $this->db->get('otm_risk_tc_mapping');
+				$check = $query->result_array();
+				
+				if($check){
+					$this->db->where('tc_seq',$data['tc_seq']);
+					$query = $this->db->get('otm_testcase');
+					$testcase_info = $query->result();
+
+					$return_data = array();
+					$return_data['pr_seq']		= $data['pr_seq'];
+					$return_data['tc_seq']		= $data['tc_seq'];
+					$return_data['pid']			= $testcase_info[0]->tc_inp_pid;
+					$return_data['id']			= $testcase_info[0]->tc_inp_id;
+					$return_data['out_id']		= $testcase_info[0]->tc_out_id;
+					$return_data['text']		= $testcase_info[0]->tc_subject;
+					$return_data['type']		= 'folder';
+
+					$return_data['link_seq']		= '';
+
+					$return_data['leaf']		= false;
+
+					$delete_array = array(
+						'otm_riskitem_ri_seq' => $data['ri_seq'],
+						'otm_testcase_tc_seq' => $data['tc_seq']
+					);
+					$this->db->delete('otm_risk_tc_mapping',$delete_array);
+
+					return "{success:true, data:'".json_encode($return_data)."'}";
+					
+				}else{
+					return "{success:true, data:{msg:'연결해제 할 수 없습니다.'}}";
+				}				
+				break;
+			default:
+				return false;
+				break;
+		}
+
+	}
 
 
 	/**
@@ -858,6 +1410,7 @@ class Riskanalysis_m extends CI_Model {
 	*/
 	function is_code_duplicate($pr_seq,$type,$name,$seq="")
 	{
+		/*
 		$seq_try_quy="";
 		if($seq){
 			$seq_try_quy = " and pco_seq!='$seq'";
@@ -870,6 +1423,19 @@ class Riskanalysis_m extends CI_Model {
 						pco_name='$name' $seq_try_quy
 					";
 		$query = $this->db->query($str_sql);
+		*/
+
+		$this->db->select('count(*) as cnt');
+		$this->db->where('otm_project_pr_seq',$pr_seq);
+		$this->db->where('pco_type',$type);
+		$this->db->where('pco_name',$name);		
+
+		if($seq){
+			$this->db->where('pco_seq!=',$seq);		
+		}
+
+		$query = $this->db->get('otm_project_code');
+
 		$tmp_arr="";
 		foreach ($query->result() as $row)
 		{
@@ -921,12 +1487,22 @@ class Riskanalysis_m extends CI_Model {
 			return 'Duplication Code';
 		}else{
 			if($data['pco_is_required'] === 'Y'){
-				$str_sql = "update otm_project_code set pco_is_required='N' where otm_project_pr_seq='".$data['pr_seq']."' and pco_type='".$data['pco_type']."'";
-				$query = $this->db->query($str_sql);
+				//$str_sql = "update otm_project_code set pco_is_required='N' where otm_project_pr_seq='".$data['pr_seq']."' and pco_type='".$data['pco_type']."'";
+				//$query = $this->db->query($str_sql);
+
+				$update_data = array('pco_is_required' => 'N');
+				$this->db->where('otm_project_pr_seq', $data['pr_seq']);
+				$this->db->where('pco_type', $data['pco_type']);
+				$this->db->update('otm_project_code', $update_data);
 			}
 			if($data['pco_is_default'] === 'Y'){
-				$str_sql = "update otm_project_code set pco_is_default='N' where otm_project_pr_seq='".$data['pr_seq']."' and pco_type='".$data['pco_type']."'";
-				$query = $this->db->query($str_sql);
+				//$str_sql = "update otm_project_code set pco_is_default='N' where otm_project_pr_seq='".$data['pr_seq']."' and pco_type='".$data['pco_type']."'";
+				//$query = $this->db->query($str_sql);
+
+				$update_data = array('pco_is_default' => 'N');
+				$this->db->where('otm_project_pr_seq', $data['pr_seq']);
+				$this->db->where('pco_type', $data['pco_type']);
+				$this->db->update('otm_project_code', $update_data);
 			}
 
 			$insert_data = array();
@@ -966,13 +1542,17 @@ class Riskanalysis_m extends CI_Model {
 		if($duplicate){
 			return 'Duplication Code';
 		}else{
-			if($data['pco_is_required'] === 'Y'){
-				$str_sql = "update otm_project_code set pco_is_required='N' where otm_project_pr_seq='".$data['pr_seq']."' and pco_type='".$data['pco_type']."'";
-				$query = $this->db->query($str_sql);
+			if($data['pco_is_required'] === 'Y'){			
+				$update_data = array('pco_is_required' => 'N');
+				$this->db->where('otm_project_pr_seq', $data['pr_seq']);
+				$this->db->where('pco_type', $data['pco_type']);
+				$this->db->update('otm_project_code', $update_data);
 			}
 			if($data['pco_is_default'] === 'Y'){
-				$str_sql = "update otm_project_code set pco_is_default='N' where otm_project_pr_seq='".$data['pr_seq']."' and pco_type='".$data['pco_type']."'";
-				$query = $this->db->query($str_sql);
+				$update_data = array('pco_is_default' => 'N');
+				$this->db->where('otm_project_pr_seq', $data['pr_seq']);
+				$this->db->where('pco_type', $data['pco_type']);
+				$this->db->update('otm_project_code', $update_data);
 			}
 
 			$data2 = array(
@@ -1017,15 +1597,21 @@ class Riskanalysis_m extends CI_Model {
 	*/
 	function update_sort_code($data)
 	{
-		$pr_seq = $data['pr_seq'];
-		$type = $data['pco_type'];
+		//$pr_seq = $data['pr_seq'];
+		//$type = $data['pco_type'];
 		$list = json_decode($data['pco_list']);
 
 		for($i=0;$i<sizeof($list);$i++){
 			$pco_seq = $list[$i];
-			$str_query = "update otm_project_code set pco_position='$i' where otm_project_pr_seq='$pr_seq' and pco_type='{$type}' and pco_seq='{$pco_seq}'";
+			//$str_query = "update otm_project_code set pco_position='$i' where otm_project_pr_seq='$pr_seq' and pco_type='{$type}' and pco_seq='{$pco_seq}'";
+			//$this->db->query($str_query);
 
-			$this->db->query($str_query);
+			$update_data = array('pco_position' => $i);
+			$this->db->where('otm_project_pr_seq', $data['pr_seq']);
+			$this->db->where('pco_type', $data['pco_type']);
+			$this->db->where('pco_seq', $pco_seq);
+			$this->db->update('otm_project_code', $update_data);
+
 		}
 		return '{success:true}';
 	}
@@ -1146,13 +1732,330 @@ class Riskanalysis_m extends CI_Model {
 
 		for($i=0;$i<sizeof($list);$i++){
 			$pco_seq = $list[$i];
-			$str_query = "update otm_riskfactor set rf_ord='$i', last_writer='{$writer}', last_regdate='{$date}' where otm_project_pr_seq='$pr_seq' and rf_type='{$type}' and rf_seq='{$pco_seq}'";
+			//$str_query = "update otm_riskfactor set rf_ord='$i', last_writer='{$writer}', last_regdate='{$date}' where otm_project_pr_seq='$pr_seq' and rf_type='{$type}' and rf_seq='{$pco_seq}'";
+			//$this->db->query($str_query);
 
-			$this->db->query($str_query);
+			$update_data = array('rf_ord'=>$i, 'last_writer'=>$writer, 'last_regdate'=>$date);
+			$this->db->where('otm_project_pr_seq', $data['pr_seq']);
+			$this->db->where('rf_type', $data['pco_type']);
+			$this->db->where('rf_seq', $pco_seq);
+			$this->db->update('otm_riskfactor', $update_data);
 		}
 		return '{success:true}';
 	}
 
+	
+	/**
+	* Function export_riskitem
+	*
+	* @return array
+	*/
+	function export_riskitem($data)
+	{
+		$return_array = array();
+		
+		//$data['pr_seq'] = $data['project_seq'];
+		//$return_array = $this->requirement_list($data);
+		
+		$pr_seq = $data['project_seq'];
+
+		//Member Info
+		$member_name = $this->get_member_name();
+
+
+		/**
+			Get UserForm Data
+		*/
+		$p_customform = array();
+		$custom_arr = array();
+
+		$this->db->select('pc_seq,otm_project_pr_seq,pc_name,b.otm_riskitem_ri_seq,b.rcv_custom_value as cv_custom_value');
+		$this->db->from('otm_project_customform as a');
+		$this->db->where('otm_project_pr_seq',$pr_seq);
+		$this->db->where('pc_category','ID_RISK');
+		$this->db->where('pc_is_use','Y');
+		$this->db->join('otm_riskitem_custom_value as b','a.pc_seq=b.otm_project_customform_pc_seq', 'left');
+		$query = $this->db->get();
+		foreach ($query->result() as $row)
+		{
+			$custom_arr[$row->otm_riskitem_ri_seq][$row->pc_seq] = $row;
+		}
+
+		$this->db->select('pc_seq,pc_name,pc_formtype');
+		$this->db->from('otm_project_customform');
+		$this->db->where('otm_project_pr_seq',$pr_seq);
+		$this->db->where('pc_category','ID_RISK');
+		$this->db->where('pc_is_use','Y');
+		$this->db->order_by('ABS(pc_1)', 'asc');
+		$this->db->order_by('pc_seq', 'asc');
+
+		$query = $this->db->get();
+		$custom_form_array = array();
+		$column_arr = array();
+		foreach ($query->result() as $row)
+		{
+			array_push($column_arr,$row->pc_seq);
+			$custom_form_array[] = $row;
+		}
+		/**
+			End : Get UserForm Data
+		*/
+
+		/**
+			Get Attach File Data
+		*/
+		$attach_files = array();
+		$this->db->select('otm_project_pr_seq as pr_seq, otm_category as category, of_no,target_seq,of_source,of_file,of_width,of_height');
+		$this->db->from('otm_file');
+		$this->db->where('otm_project_pr_seq',$pr_seq);
+		$this->db->where('otm_category','ID_RISK');
+		$files_query = $this->db->get();
+		foreach ($files_query->result() as $row)
+		{
+			$row->path = '/uploads/files/'.$pr_seq.'/'.$row->of_file;
+			$attach_files[$row->target_seq][$row->of_no] = $row;
+		}
+		/**
+			End : Get Image File Data
+		*/
+
+
+		$this->db->where('otm_project_pr_seq', $pr_seq);
+		$this->db->order_by('ri_seq asc');
+		$query = $this->db->get('otm_riskitem');
+		foreach ($query->result() as $temp_row)
+		{
+			//ri_seq, otm_project_pr_seq, ri_subject, ri_description, writer, regdate, last_writer, last_update
+
+			$export_row[lang('subject')] = $temp_row->ri_subject;
+			$export_row[lang('description')] = $temp_row->ri_description;
+
+			for($i=0; $i<count($column_arr); $i++){
+				$export_row[$custom_form_array[$i]->pc_name."(*)"] = $custom_arr[$temp_row->ri_seq][$column_arr[$i]]->cv_custom_value;
+			}			
+
+			$export_row[lang('writer')] = $member_name[$temp_row->writer];
+			$export_row[lang('regdate')] = $temp_row->regdate;
+
+			
+			if($attach_files[$temp_row->ri_seq]){
+				$temp_row->ri_file = $attach_files[$temp_row->ri_seq];
+			}else{
+				$temp_row->ri_file = array();
+			}
+			$export_row['otm_export_images'] = $temp_row->ri_file;
+
+			$return_array[] = $export_row;
+		}
+		
+		return $return_array;
+	}
+
+
+	/**
+	* Function import_riskitem
+	*
+	* @param array $data Post Data.
+	*
+	* @return array
+	*/
+	public function import($data)
+	{
+		if(isset($data['function'])){
+			switch($data['function'])
+			{
+				case 'import_riskitem':
+					return $this->import_riskitem($data);
+					break;
+			}
+		}else{
+			return;	
+		}
+	}
+	public function import_riskitem($data)
+	{
+		$pr_seq = $data['project_seq'];
+
+		echo "<script> top.myUpdateProgress(0,'Step 1 : Data Loading...');</script>";
+
+		$worksheet	= $data['import_data'];
+		unset($data['import_data']);
+
+		$highestRow	= $worksheet->getHighestRow();
+		$highestColumn      = $worksheet->getHighestColumn();
+		$highestColumnIndex = PHPExcel_Cell::columnIndexFromString($highestColumn);
+		echo "<script> top.myUpdateProgress(100,'Step 1 : Data Loading...');</script>";
+
+		if($highestRow > 1001){
+			$result_data['result'] = FALSE;
+			$msg['over'] = 'Over Max Row(1000) : '.($highestRow -1);
+			$result_data['msg'] = json_encode($msg);
+
+			return $result_data;
+		}
+		if($highestColumnIndex > 50){
+			$result_data['result'] = FALSE;
+			$msg['over'] = 'Over Max Column(50) : '.$highestColumnIndex;
+			$result_data['msg'] = json_encode($msg);
+			return $result_data;
+		}
+
+		echo "<script> top.myUpdateProgress(0,'Step 2 : Data Checking...');</script>";
+
+		/*
+			ID 중복 확인
+		* /
+		$df_id_arry = array();
+		for ($row = 2; $row <= $highestRow; ++ $row) {
+			if($data['import_check_id']){
+				$df_id_cell = $worksheet->getCellByColumnAndRow(0, $row);
+				$df_id = $df_id_cell->getValue();
+				array_push($df_id_arry,trim($df_id));
+			}
+			$tmp_per = (round(($row/$highestRow)*100) > 20)?(round(($row/$highestRow)*100)-20):0;
+
+			echo "<script> top.myUpdateProgress(".$tmp_per.",'Step 2 : Data Checking...');</script>";
+		}
+
+		if($data['import_check_id']){
+			$duplicate_id_array = array();
+			$duplicate_seq_array = array();
+			$this->db->select('df_seq, df_id');
+			$this->db->from('otm_defect');
+			$this->db->where('otm_project_pr_seq',$pr_seq);
+			$this->db->where_in('df_id',$df_id_arry);
+			$query = $this->db->get();
+			if($query->result()){
+				foreach ($query->result() as $row)
+				{
+					array_push($duplicate_id_array,$row->df_id);
+					$duplicate_seq_array[$row->df_id] = $row->df_seq;
+				}
+			}
+		}
+
+		if(count($duplicate_id_array) > 0 && $data['update'] == false){
+			$result_data['result'] = FALSE;
+			$msg['duplicate_id'] = $duplicate_id_array;
+			$result_data['msg'] = json_encode($msg);
+
+			return $result_data;
+		}
+		/ *
+			End : ID 중복 확인
+		*/
+
+
+		/**
+			Get OTM Mamber Data
+		*/
+		$member_name = array();
+		$this->db->from('otm_member');
+		$query = $this->db->get();
+		foreach ($query->result() as $row)
+		{
+			$member_name[$row->mb_name] = $row->mb_email;
+		}
+		/**
+			End : Get OTM Mamber Data
+		*/
+
+
+		/**
+			Get Project Code Data
+		*/
+		$p_code = array();
+
+		$this->db->from('otm_project_code as a');
+		$this->db->where('otm_project_pr_seq',$pr_seq);
+		$query = $this->db->get();
+		foreach ($query->result() as $row)
+		{
+			$p_code[$row->pco_name] = $row->pco_seq;
+		}
+		/**
+			End : Get Project Code Data
+		*/
+
+
+		/**
+			Get UserForm Data
+		*/
+		$this->db->select('pc_seq,pc_name,pc_formtype');
+		$this->db->from('otm_project_customform');
+		$this->db->where('otm_project_pr_seq',$pr_seq);
+		$this->db->where('pc_category','ID_RISK');
+		$this->db->where('pc_is_use','Y');
+		$this->db->order_by('ABS(pc_1)', 'asc');
+		$this->db->order_by('pc_seq', 'asc');
+
+		$query = $this->db->get();
+		$userform_list = array();
+		foreach ($query->result() as $row)
+		{
+			$userform_list[] = $row;
+		}
+
+		/**
+			End : Get UserForm Data
+		*/
+
+
+		for ($row = 2; $row <= $highestRow; ++ $row) {
+			$custom_form_data = array();
+
+			$col_array = array();
+			$userform_no = 0;
+
+			for ($col = 0; $col < $highestColumnIndex; ++ $col) {
+				$custom_form_row_data = array();
+
+				$cell = $worksheet->getCellByColumnAndRow($col, $row);
+				$val = $cell->getValue();
+				switch($col)
+				{
+					case 0:	$col_id = 'ri_subject';
+							$col_array[$col_id] = trim($val);
+						break;
+					case 1:	$col_id = 'ri_description';
+							$col_array[$col_id] = $val;
+						break;
+					default:
+							if(isset($userform_list[$userform_no])){
+								$custom_form_row_data['name'] = $userform_list[$userform_no]->pc_name;
+								$custom_form_row_data['seq'] = $userform_list[$userform_no]->pc_seq;
+								$custom_form_row_data['type'] = $userform_list[$userform_no]->pc_formtype;
+								$custom_form_row_data['value'] = $val;
+								array_push($custom_form_data,$custom_form_row_data);
+								$userform_no++;
+							}else{
+								continue;
+							}
+						break;
+				}
+			}
+
+		
+			/*
+				Riskitem Insert
+			*/
+			$import_excel_data = array(
+				'pr_seq' => $pr_seq,
+				'ri_subject' => $col_array['ri_subject'],
+				'ri_description' => $col_array['ri_description'],	
+				'custom_form' => json_encode($custom_form_data),
+				'return_key' => 'seq'
+			);
+			$seq = $this->create_riskitem($import_excel_data);
+			
+			echo "<script> top.myUpdateProgress(".round(($row/$highestRow)*100).",'Step 3 : Data Importing...(".$col_array['ri_subject'].":".$row."/".$highestRow.")');</script>";
+		}
+
+		$result_data['result'] = TRUE;
+		$result_data['msg'] = $highestRow;
+
+		return $result_data;
+	}
 }
 //End of file riskanalysis_m.php
 //Location: ./models/riskanalysis_m.php

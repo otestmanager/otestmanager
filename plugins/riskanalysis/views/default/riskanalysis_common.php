@@ -74,16 +74,48 @@ function riskitem_view_panel(obj)
 {
 	var target_panel = obj.target;
 	Ext.getCmp(target_panel).update('');
+	Ext.getCmp(target_panel).removeAll();
+
+	riskanalysis_riskitem_requirement_unlink_store.removeAll();
+	riskanalysis_riskitem_requirement_link_store.removeAll();
+	//riskanalysis_riskitem_tc_store.removeAll();
+
+	//if(obj.ri_seq == ''){
+	//	return;
+	//}else{
+	//}
+	var riskanalysis_riskitem_east_panel = Ext.getCmp('riskanalysis_riskitem_east_panel');
 
 	var Records = Ext.getCmp("riskanalysis_riskitemGrid").getSelectionModel().selected.items;
-	
+		
 	if(Records.length > 1){
-		Ext.getCmp(target_panel).removeAll();
-		Ext.getCmp('riskanalysis_riskitem_east_panel').collapse();
-		riskanalysis_riskitem_requirement_unlink_store.load({params:{'ri_seq':''}});
-		riskanalysis_riskitem_requirement_link_store.load({params:{'ri_seq':''}});
+		console.log('a');
+		riskanalysis_riskitem_east_panel.collapse();
+		//riskanalysis_riskitem_requirement_unlink_store.load({params:{'ri_seq':''}});
+		//riskanalysis_riskitem_requirement_link_store.load({params:{'ri_seq':''}});
+		//riskanalysis_riskitem_tc_store.load();
+
+		//riskanalysis_riskitem_requirement_unlink_store.removeAll();
+		//riskanalysis_riskitem_requirement_unlink_store.sync();
+
+		//riskanalysis_riskitem_requirement_link_store.removeAll();
+		//riskanalysis_riskitem_requirement_link_store.sync();		
 		return;
 	}
+	/*else if(Records.length == 1){
+		//if(!obj.pr_seq && !obj.ri_seq){
+		console.log('b');	
+		//riskanalysis_riskitem_east_panel.collapse();
+		//riskanalysis_riskitem_requirement_unlink_store.removeAll();
+		//riskanalysis_riskitem_requirement_link_store.removeAll();
+		//return;
+		obj.ri_seq = Records[0].data.ri_seq;
+		obj.pr_seq = project_seq;
+	}else{
+		console.log('c');
+		//riskanalysis_riskitem_east_panel.expand();
+	}
+	*/
 
 	Ext.Ajax.request({
 		url : "./index.php/Plugin_view/riskanalysis/view_riskitem",
@@ -104,6 +136,7 @@ function riskitem_view_panel(obj)
 					items		: [{
 						xtype		: 'displayfield',
 						fieldLabel	: 'seq',
+						hidden		: true,
 						value		: riskitem_info.data.ri_seq
 					},{
 						xtype		: 'displayfield',
@@ -112,7 +145,7 @@ function riskitem_view_panel(obj)
 					},{
 						xtype		: 'displayfield',
 						fieldLabel	: Otm.com_date,
-						value		: riskitem_info.data.regdate.substr(0,10)
+						value		: (riskitem_info.data.regdate)?riskitem_info.data.regdate.substr(0,10):''
 					},{xtype : 'menuseparator',width : '100%'}]
 				};
 
@@ -175,9 +208,13 @@ function riskitem_view_panel(obj)
 					animation: false, autoScroll: true,
 					items : [view_form]
 				});
-
+				
 				riskanalysis_riskitem_requirement_unlink_store.load({params:{'ri_seq':obj.ri_seq}});
 				riskanalysis_riskitem_requirement_link_store.load({params:{'ri_seq':obj.ri_seq}});
+
+				riskanalysis_riskitem_tc_store.reload();//{params:{'ri_seq':obj.ri_seq}});
+
+				riskanalysis_riskitem_east_panel.expand();
 			}
 		},
 		failure: function ( result, request ) {

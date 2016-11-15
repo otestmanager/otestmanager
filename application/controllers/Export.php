@@ -55,13 +55,16 @@ class Export extends Controller {
 			if($method){
 				$data['module_directory'] =	$module_directory;
 				$data['controller'] = $controller;
-
-				if(@$function) {
+			
+				$error_rep = error_reporting();
+				error_reporting(0);  
+				if($function) {
 					$data['function'] = $function;
 				}
 				else{
 					$data['function'] = '';
 				}
+				error_reporting($error_rep);
 
 				$data['skin'] = 'default';
 

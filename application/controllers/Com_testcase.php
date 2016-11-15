@@ -23,9 +23,7 @@ class Com_testcase extends Controller
 		$this->load->database();
 		$this->load->model('com_testcase_m');
 	}
-	public function aaaaa($temp_arr){
-		echo json_encode($this->com_testcase_m->comtc_list_export_test());
-	}
+
 
 	/**
 	* Function return_json

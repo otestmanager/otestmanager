@@ -85,6 +85,7 @@ class Riskanalysis extends Controller {
 		}
 	}
 
+
 	/**
 	* Function riskanalysis_discussion
 	*
@@ -119,6 +120,48 @@ class Riskanalysis extends Controller {
 		//return json_encode($data);
 		return render($data);
 	}
+
+
+	/*
+	*******************************
+	* Riskanalysis Chart
+	*******************************
+	*/
+
+	/**
+	* Function riskanalysis_riskarea_riskitem_chart
+	*
+	* @return string
+	*/
+	function riskanalysis_riskarea_riskitem_chart()
+	{
+		$data = array(
+			'pr_seq' => $this->input->post_get('pr_seq', TRUE)
+		);
+				
+		return $this->return_json($this->riskanalysis_m->riskanalysis_riskarea_riskitem_chart($data));
+	}
+
+
+	/**
+	* Function riskanalysis_riskitem_requirement_chart
+	*
+	* @return string
+	*/
+	function riskanalysis_riskitem_requirement_chart()
+	{
+		$data = array(
+			'pr_seq' => $this->input->post_get('pr_seq', TRUE)
+		);
+				
+		return $this->return_json($this->riskanalysis_m->riskanalysis_riskitem_requirement_chart($data));
+	}
+
+	/*
+	*******************************
+	* END : Riskanalysis Chart
+	*******************************
+	*/
 
 
 	/**
@@ -388,10 +431,52 @@ class Riskanalysis extends Controller {
 	function riskitem_requirement_link()
 	{
 		$data = array(
+			'type' => $this->input->post_get('type', TRUE),
 			'ri_seq' => $this->input->post_get('ri_seq', TRUE),
 			'req_list' => json_decode($this->input->post_get('req_list', TRUE)),
 		);
 		return  $this->return_json($this->riskanalysis_m->riskitem_requirement_link($data));
+	}
+
+
+	/**
+	*******************************
+	*	riskanalysis_testcase
+	*******************************
+	*/
+
+	/**
+	* Function riskanalysis_testcase_list
+	*
+	* @return json string
+	*/
+	function riskanalysis_testcase_list()
+	{
+		$data = array(
+			'pr_seq' => $this->input->post_get('pr_seq', TRUE),
+			'node' => $this->input->post_get('node', TRUE),
+			'ri_seq' => $this->input->post_get('ri_seq', TRUE)
+		);
+
+		return json_encode($this->riskanalysis_m->riskanalysis_testcase_list($data));
+	}
+
+
+	/**
+	* Function riskitem_testcase_link
+	*
+	* @return json string
+	*/
+	function riskitem_testcase_link()
+	{
+		$data = array(
+			'type' => $this->input->post_get('type', TRUE),
+			'pr_seq' => $this->input->post_get('pr_seq', TRUE),
+			'ri_seq' => $this->input->post_get('ri_seq', TRUE),
+			'tc_seq' => $this->input->post_get('tc_seq', TRUE),
+			'pid' => $this->input->post_get('pid', TRUE)
+		);
+		return  $this->riskanalysis_m->riskitem_testcase_link($data);
 	}
 
 
@@ -603,6 +688,23 @@ class Riskanalysis extends Controller {
 	}
 
 	
+	/**
+	* Function export_riskitem
+	*
+	* @return string
+	*/
+	function export_riskitem(){
+		$data = array(
+			'project_seq' => $this->input->post_get('project_seq',true),
+			'limit' => $this->input->post_get('limit',true),
+			'page' => $this->input->post_get('page',true),
+			'start' => $this->input->post_get('start',true)
+		);
+
+		$list = $this->riskanalysis_m->export_riskitem($data);
+		return $list;
+		exit;
+	}
 
 }
 //End of file riskanalysis.php

@@ -163,10 +163,11 @@ class MY_Migration
 			//$query = $this->db->query('CREATE DATABASE '.$database_name.' CHARACTER SET utf8 COLLATE utf8_general_ci');
 			//if($query){
 			if($this->dbforge->create_database($database_name)){
-				echo '<CENTER>';
-				echo '<div style="padding:10;font-size:20px;color:blue;"> Create Database Success.</div><br><br>';
-				echo '<div style="padding:10;font-size:20px;color:red;"> Next Step : <a href="./index.php/Otm/install">INSTALL</a> </div><br>';
-				echo '</CENTER>';
+				$str = '<CENTER>
+						<div style="padding:10;font-size:20px;color:blue;"> Create Database Success.</div><br><br>
+						<div style="padding:10;font-size:20px;color:red;"> Next Step : <a href="./index.php/Otm/install">INSTALL</a> </div><br>
+					</CENTER>';
+				echo $str;
 			}else{
 				show_error('Database Connect Error.');
 			}
@@ -251,13 +252,15 @@ class MY_Migration
 				redirect('', 'refresh');
 			}
 		}
-
-		echo '<br><a href="/">HOME</a><br><br>';
+		$str = '<br><a href="/">HOME</a><br><br>';
+		echo $str;
 
 		if($this->_check_module('Otm')){
-			echo '- OTM Core module install Success.<br><br>';
+			$str = '- OTM Core module install Success.<br><br>';
+			echo $str;
 		}else{
-			echo '- OTM Core module install : <a href="./index.php/Plugin_view/'.$method.'/install">INSTALL</a><br><br>';
+			$str = '- OTM Core module install : <a href="./index.php/Plugin_view/'.$method.'/install">INSTALL</a><br><br>';
+			echo $str;
 		}
 
 		$path = "./plugins";
@@ -278,9 +281,11 @@ class MY_Migration
 			$method = $entrys['dir'][$i];
 
 			if($this->_check_module($method)){
-				echo '- '.$method.' module install Success. <br><br>';
+				$str = '- '.$method.' module install Success. <br><br>';
+				echo $str;
 			}else{
-				echo '- '.$method.' module install : <a href="./index.php/Plugin_view/'.$method.'/install">INSTALL</a><br><br>';
+				$str = '- '.$method.' module install : <a href="./index.php/Plugin_view/'.$method.'/install">INSTALL</a><br><br>';
+				echo $str;
 			}
 		}
 	}
@@ -305,9 +310,11 @@ class MY_Migration
 			{
 				$execution = $this->version($version);
 				if($execution){
-					echo 'Success update : version '.$version.'. <br><br><a href="/">HOME</a>';
+					$str = 'Success update : version '.$version.'. <br><br><a href="/">HOME</a>';
+					echo $str;
 				}else{
-					echo 'Fail update : version '.$version.'. <br><br><a href="/">HOME</a>';
+					$str = 'Fail update : version '.$version.'. <br><br><a href="/">HOME</a>';
+					echo $str;
 				}
 			}
 		}
@@ -525,7 +532,7 @@ class MY_Migration
 
 		//log_message('debug', 'Current migration: ' . $current_version);
 
-		$version = $i + ($step == 1 ? -1 : 0);
+		//$version = $i + ($step == 1 ? -1 : 0);
 
 		// If there is nothing to do so quit
 		if ($migrations === array()) {
